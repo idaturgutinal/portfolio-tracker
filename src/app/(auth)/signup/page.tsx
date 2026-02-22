@@ -361,7 +361,13 @@ export default function SignupPage() {
             type="button"
             variant="outline"
             className="w-full"
-            onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+            onClick={() => {
+              if (!agreed) {
+                setError("You must agree to the Terms of Service and Privacy Policy.");
+                return;
+              }
+              signIn("google", { callbackUrl: "/dashboard" });
+            }}
             disabled={loading}
           >
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
