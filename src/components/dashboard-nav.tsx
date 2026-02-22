@@ -20,7 +20,7 @@ export function DashboardNav({ userName }: { userName: string }) {
   return (
     <header className="border-b sticky top-0 z-40 bg-background">
       <div className="container flex h-14 items-center gap-6">
-        <span className="font-semibold text-sm tracking-tight">Portfolio Tracker</span>
+        <span className="font-semibold text-sm tracking-tight">FolioVault</span>
 
         <nav className="flex items-center gap-1 flex-1">
           {NAV_LINKS.map(({ href, label, icon: Icon }) => {

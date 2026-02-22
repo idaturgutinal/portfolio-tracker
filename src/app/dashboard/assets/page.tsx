@@ -4,8 +4,10 @@ import { getAssetsByUser, getPortfolios } from "@/services/portfolio.service";
 import { getBatchQuotes, getFXRate, toMarketSymbol } from "@/services/marketData";
 import { AssetsTable } from "@/components/assets/assets-table";
 import type { EnrichedAsset, PortfolioOption } from "@/types";
+import { PageHeader } from "@/components/page-header";
+import { Wallet } from "lucide-react";
 
-export const metadata = { title: "Assets — Portfolio Tracker" };
+export const metadata = { title: "Assets — FolioVault" };
 
 export default async function AssetsPage() {
   const session = await auth();
@@ -88,12 +90,11 @@ export default async function AssetsPage() {
 
   return (
     <main className="container py-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Assets</h1>
-        <p className="text-muted-foreground mt-1">
-          Manage all holdings across your portfolios.
-        </p>
-      </div>
+      <PageHeader
+        icon={Wallet}
+        title="Assets"
+        description="Manage all holdings across your portfolios."
+      />
       <AssetsTable initialAssets={consolidatedAssets} portfolios={portfolioOptions} currency={currency} />
     </main>
   );

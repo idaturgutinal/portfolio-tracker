@@ -7,8 +7,10 @@ import { PerformanceChart } from "@/components/dashboard/performance-chart";
 import { AllocationChart } from "@/components/dashboard/allocation-chart";
 import { TopMovers } from "@/components/dashboard/top-movers";
 import { AlertNotifier } from "@/components/alerts/alert-notifier";
+import { PageHeader } from "@/components/page-header";
+import { LayoutDashboard } from "lucide-react";
 
-export const metadata = { title: "Dashboard — Portfolio Tracker" };
+export const metadata = { title: "Dashboard — FolioVault" };
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -23,12 +25,11 @@ export default async function DashboardPage() {
   return (
     <main className="container py-8 space-y-6">
       <AlertNotifier triggered={triggeredAlerts} />
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">
-          Welcome back, {session.user.name}.
-        </p>
-      </div>
+      <PageHeader
+        icon={LayoutDashboard}
+        title="Dashboard"
+        description={`Welcome back, ${session.user.name}.`}
+      />
 
       <SummaryCards
         totalValue={data.totalValue}

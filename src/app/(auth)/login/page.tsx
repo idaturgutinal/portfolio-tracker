@@ -61,7 +61,7 @@ export default function LoginPage() {
   }
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card className="w-full max-w-sm shadow-md">
       <CardHeader>
         <CardTitle className="text-2xl">Sign in</CardTitle>
         <CardDescription>Enter your credentials to access your portfolios.</CardDescription>

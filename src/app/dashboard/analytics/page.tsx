@@ -6,8 +6,10 @@ import { PerformanceChart } from "@/components/dashboard/performance-chart";
 import { AllocationChart } from "@/components/dashboard/allocation-chart";
 import { PnlBarChart } from "@/components/analytics/pnl-bar-chart";
 import { AssetBreakdownTable } from "@/components/analytics/asset-breakdown-table";
+import { PageHeader } from "@/components/page-header";
+import { BarChart2 } from "lucide-react";
 
-export const metadata = { title: "Analytics — Portfolio Tracker" };
+export const metadata = { title: "Analytics — FolioVault" };
 
 export default async function AnalyticsPage() {
   const session = await auth();
@@ -18,12 +20,11 @@ export default async function AnalyticsPage() {
 
   return (
     <main className="container py-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
-        <p className="text-muted-foreground mt-1">
-          Deep-dive into your portfolio performance and allocation.
-        </p>
-      </div>
+      <PageHeader
+        icon={BarChart2}
+        title="Analytics"
+        description="Deep-dive into your portfolio performance and allocation."
+      />
 
       <SummaryCards
         totalValue={data.totalValue}

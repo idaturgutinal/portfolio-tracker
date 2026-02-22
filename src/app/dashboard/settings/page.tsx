@@ -3,8 +3,10 @@ import { auth } from "@/lib/auth";
 import { getUserProfile } from "@/services/user.service";
 import { SettingsShell } from "@/components/settings/settings-shell";
 import { UserGuidePanel } from "@/components/onboarding/user-guide-panel";
+import { PageHeader } from "@/components/page-header";
+import { Settings } from "lucide-react";
 
-export const metadata = { title: "Settings — Portfolio Tracker" };
+export const metadata = { title: "Settings — FolioVault" };
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -15,12 +17,11 @@ export default async function SettingsPage() {
 
   return (
     <main className="container py-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground mt-1">
-          Manage your account, preferences, and data.
-        </p>
-      </div>
+      <PageHeader
+        icon={Settings}
+        title="Settings"
+        description="Manage your account, preferences, and data."
+      />
       <UserGuidePanel />
       <SettingsShell profile={profile} />
     </main>

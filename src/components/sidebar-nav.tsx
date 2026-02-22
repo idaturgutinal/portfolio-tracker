@@ -68,7 +68,7 @@ export function SidebarNav({ userName, userEmail }: Props) {
       {/* Logo */}
       <div className="flex items-center gap-2 h-14 px-4 border-b shrink-0">
         <TrendingUp className="h-5 w-5 text-primary" />
-        <span className="font-semibold text-sm tracking-tight">Portfolio Tracker</span>
+        <span className="font-semibold text-sm tracking-tight">FolioVault</span>
       </div>
 
       {/* Main nav */}
@@ -124,7 +124,7 @@ export function SidebarNav({ userName, userEmail }: Props) {
         </button>
         <div className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-primary" />
-          <span className="font-semibold text-sm tracking-tight">Portfolio Tracker</span>
+          <span className="font-semibold text-sm tracking-tight">FolioVault</span>
         </div>
       </header>
 

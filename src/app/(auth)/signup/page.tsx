@@ -180,7 +180,7 @@ export default function SignupPage() {
 
   if (step === "verify") {
     return (
-      <Card className="w-full max-w-sm">
+      <Card className="w-full max-w-sm shadow-md">
         <CardHeader>
           <div className="flex items-center gap-2 mb-1">
             <span className="rounded-md bg-primary/10 p-1.5">
@@ -257,7 +257,7 @@ export default function SignupPage() {
   }
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card className="w-full max-w-sm shadow-md">
       <CardHeader>
         <CardTitle className="text-2xl">Create account</CardTitle>
         <CardDescription>Start tracking your portfolio in seconds.</CardDescription>

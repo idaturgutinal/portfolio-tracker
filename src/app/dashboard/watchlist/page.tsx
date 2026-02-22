@@ -4,8 +4,10 @@ import { getWatchlistByUser } from "@/services/watchlist.service";
 import { getBatchQuotes, toMarketSymbol } from "@/services/marketData";
 import { WatchlistTable } from "@/components/watchlist/watchlist-table";
 import type { WatchlistRow } from "@/types";
+import { PageHeader } from "@/components/page-header";
+import { Eye } from "lucide-react";
 
-export const metadata = { title: "Watchlist — Portfolio Tracker" };
+export const metadata = { title: "Watchlist — FolioVault" };
 
 export default async function WatchlistPage() {
   const session = await auth();
@@ -41,13 +43,11 @@ export default async function WatchlistPage() {
 
   return (
     <main className="container py-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Watchlist</h1>
-        <p className="text-muted-foreground mt-1">
-          Track securities you&apos;re interested in without adding them to a
-          portfolio.
-        </p>
-      </div>
+      <PageHeader
+        icon={Eye}
+        title="Watchlist"
+        description="Track securities you're interested in without adding them to a portfolio."
+      />
       <WatchlistTable initialItems={items} />
     </main>
   );

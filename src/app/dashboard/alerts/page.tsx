@@ -4,8 +4,10 @@ import { getAlertsByUser } from "@/services/alert.service";
 import { getAssetsByUser } from "@/services/portfolio.service";
 import { AlertsTable } from "@/components/alerts/alerts-table";
 import type { AssetOption, PriceAlertRow } from "@/types";
+import { PageHeader } from "@/components/page-header";
+import { Bell } from "lucide-react";
 
-export const metadata = { title: "Price Alerts — Portfolio Tracker" };
+export const metadata = { title: "Price Alerts — FolioVault" };
 
 export default async function AlertsPage() {
   const session = await auth();
@@ -37,12 +39,11 @@ export default async function AlertsPage() {
 
   return (
     <main className="container py-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Price Alerts</h1>
-        <p className="text-muted-foreground mt-1">
-          Monitor price thresholds for your assets.
-        </p>
-      </div>
+      <PageHeader
+        icon={Bell}
+        title="Price Alerts"
+        description="Monitor price thresholds for your assets."
+      />
       <AlertsTable initialAlerts={alerts} assetOptions={assetOptions} />
     </main>
   );

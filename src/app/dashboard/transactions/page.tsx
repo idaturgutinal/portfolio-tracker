@@ -4,8 +4,10 @@ import { getTransactionsByUser } from "@/services/transaction.service";
 import { getAssetsByUser } from "@/services/portfolio.service";
 import { TransactionsTable } from "@/components/transactions/transactions-table";
 import type { AssetOption, EnrichedTransaction } from "@/types";
+import { PageHeader } from "@/components/page-header";
+import { ArrowLeftRight } from "lucide-react";
 
-export const metadata = { title: "Transactions — Portfolio Tracker" };
+export const metadata = { title: "Transactions — FolioVault" };
 
 export default async function TransactionsPage() {
   const session = await auth();
@@ -46,12 +48,11 @@ export default async function TransactionsPage() {
 
   return (
     <main className="container py-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Transactions</h1>
-        <p className="text-muted-foreground mt-1">
-          Full transaction history across all portfolios.
-        </p>
-      </div>
+      <PageHeader
+        icon={ArrowLeftRight}
+        title="Transactions"
+        description="Full transaction history across all portfolios."
+      />
       <TransactionsTable
         initialTransactions={enrichedTransactions}
         assetOptions={assetOptions}
