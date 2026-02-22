@@ -153,8 +153,8 @@ export async function getDashboardData(
 
   // ── Top movers (sorted by gainLossPct) ───────────────────────────────────
   const sorted = [...assetMetrics].sort((a, b) => b.gainLossPct - a.gainLossPct);
-  const topGainers = sorted.slice(0, 5);
-  const topLosers = [...sorted].reverse().slice(0, 5);
+  const topGainers = sorted.filter((a) => a.gainLossPct > 0).slice(0, 5);
+  const topLosers = sorted.filter((a) => a.gainLossPct < 0).reverse().slice(0, 5);
 
   return {
     totalValue,
