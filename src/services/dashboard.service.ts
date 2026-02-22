@@ -54,13 +54,34 @@ export async function getDashboardData(
 
   const allAssets = portfolios.flatMap((p) => p.assets);
 
-  // ── Fetch live prices for all unique symbols + FX rate ───────────────────
-  const symbolMap = new Map<string, string>(); // assetId → Yahoo symbol
+  // ── Collect all transactions before grouping (needed for performance) ────
+  const allTransactions = allAssets
+    .flatMap((a) =>
+      a.transactions.map((t) => ({
+        date: t.date,
+        type: t.type as string,
+        quantity: t.quantity,
+        pricePerUnit: t.pricePerUnit,
+      }))
+    )
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  // ── Group by symbol across all portfolios ───────────────────────────────
+  // Dashboard / analytics views show one row per ticker. Multiple lots of the
+  // same symbol (even across different portfolios) are merged via weighted avg.
+  const groupMap = new Map<string, (typeof allAssets)[number][]>();
   for (const a of allAssets) {
-    symbolMap.set(a.id, toMarketSymbol(a.symbol, a.assetType));
+    const key = a.symbol.toUpperCase();
+    if (!groupMap.has(key)) groupMap.set(key, []);
+    groupMap.get(key)!.push(a);
   }
 
-  const uniqueSymbols = [...new Set(symbolMap.values())];
+  // ── Fetch live prices for unique Yahoo symbols + FX rate ─────────────────
+  const uniqueSymbols = [
+    ...new Set(
+      [...groupMap.values()].map((g) => toMarketSymbol(g[0].symbol, g[0].assetType))
+    ),
+  ];
   const [quotes, fxRate] = await Promise.all([
     getBatchQuotes(uniqueSymbols),
     getFXRate(currency),
@@ -68,27 +89,31 @@ export async function getDashboardData(
 
   let pricesStale = false;
 
-  // ── Build per-asset metrics ──────────────────────────────────────────────
-  const assetMetrics: AssetMetric[] = allAssets.map((a) => {
-    const yahooSym = symbolMap.get(a.id)!;
+  // ── Build per-group metrics (weighted-average lots within same portfolio) ─
+  const assetMetrics: AssetMetric[] = [...groupMap.values()].map((group) => {
+    const totalQty = group.reduce((s, a) => s + a.quantity, 0);
+    const weightedAvgBuy =
+      group.reduce((s, a) => s + a.averageBuyPrice * a.quantity, 0) / totalQty;
+
+    const yahooSym = toMarketSymbol(group[0].symbol, group[0].assetType);
     const quote = quotes.get(yahooSym);
 
     if (!quote) pricesStale = true;
 
     const currentPrice = quote ? quote.price * fxRate : null;
-    const effectivePrice = currentPrice ?? a.averageBuyPrice * fxRate;
-    const value = a.quantity * effectivePrice;
-    const costBasis = a.quantity * a.averageBuyPrice * fxRate;
+    const effectivePrice = currentPrice ?? weightedAvgBuy * fxRate;
+    const value = totalQty * effectivePrice;
+    const costBasis = totalQty * weightedAvgBuy * fxRate;
     const gainLoss = value - costBasis;
     const gainLossPct = costBasis > 0 ? gainLoss / costBasis : 0;
 
     return {
-      id: a.id,
-      symbol: a.symbol,
-      name: a.name,
-      assetType: a.assetType,
-      quantity: a.quantity,
-      averageBuyPrice: a.averageBuyPrice,
+      id: group[0].id,
+      symbol: group[0].symbol,
+      name: group[0].name,
+      assetType: group[0].assetType,
+      quantity: totalQty,
+      averageBuyPrice: weightedAvgBuy,
       currentPrice,
       value,
       gainLoss,
@@ -124,17 +149,6 @@ export async function getDashboardData(
   }));
 
   // ── Performance history from transactions ────────────────────────────────
-  const allTransactions = allAssets
-    .flatMap((a) =>
-      a.transactions.map((t) => ({
-        date: t.date,
-        type: t.type as string,
-        quantity: t.quantity,
-        pricePerUnit: t.pricePerUnit,
-      }))
-    )
-    .sort((a, b) => a.date.getTime() - b.date.getTime());
-
   const performance = buildPerformance(allTransactions);
 
   // ── Top movers (sorted by gainLossPct) ───────────────────────────────────
