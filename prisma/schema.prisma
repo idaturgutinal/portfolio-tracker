@@ -9,14 +9,15 @@ datasource db {
 }
 
 model User {
-  id              String   @id @default(cuid())
+  id              String          @id @default(cuid())
   name            String
-  email           String   @unique
+  email           String          @unique
   password        String
-  defaultCurrency String   @default("USD")
-  createdAt       DateTime @default(now())
+  defaultCurrency String          @default("USD")
+  createdAt       DateTime        @default(now())
   portfolios      Portfolio[]
   alerts          PriceAlert[]
+  watchlistItems  WatchlistItem[]
   @@map("users")
 }
 
@@ -74,4 +75,17 @@ model PriceAlert {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   asset       Asset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
   @@map("price_alerts")
+}
+
+model WatchlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  symbol    String
+  name      String
+  assetType String   @default("STOCK")
+  notes     String?
+  addedAt   DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, symbol])
+  @@map("watchlist_items")
 }

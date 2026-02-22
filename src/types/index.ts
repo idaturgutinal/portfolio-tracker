@@ -68,6 +68,8 @@ export interface CreateAssetInput {
 
 export interface EnrichedAsset {
   id: string;
+  /** All underlying DB asset IDs. Single-row assets have ids = [id]. */
+  ids: string[];
   symbol: string;
   name: string;
   assetType: string;
@@ -148,4 +150,24 @@ export interface TriggeredAlert {
   condition: string;
   targetPrice: number;
   currentPrice: number;
+}
+
+export interface WatchlistRow {
+  id: string;
+  symbol: string;
+  name: string;
+  assetType: string;
+  notes: string | null;
+  addedAt: string; // ISO string
+  currentPrice: number | null;
+  change: number | null;
+  changePercent: number | null;
+  currency: string;
+}
+
+export interface CreateWatchlistItemInput {
+  symbol: string;
+  name: string;
+  assetType: string;
+  notes?: string;
 }

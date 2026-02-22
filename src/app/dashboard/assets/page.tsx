@@ -33,6 +33,7 @@ export default async function AssetsPage() {
     const costBasis = a.quantity * a.averageBuyPrice * fxRate;
     return {
       id: a.id,
+      ids: [a.id],
       symbol: a.symbol,
       name: a.name,
       assetType: a.assetType,
@@ -42,6 +43,37 @@ export default async function AssetsPage() {
       notes: a.notes,
       portfolioId: a.portfolioId,
       portfolioName: a.portfolio.name,
+      currentPrice,
+      marketValue,
+      pnl: marketValue - costBasis,
+      pnlPct: costBasis > 0 ? (marketValue - costBasis) / costBasis : 0,
+    };
+  });
+
+  // Consolidate duplicate symbol+portfolio combinations using weighted average
+  const groupMap = new Map<string, EnrichedAsset[]>();
+  for (const a of enrichedAssets) {
+    const key = `${a.portfolioId}::${a.symbol}`;
+    if (!groupMap.has(key)) groupMap.set(key, []);
+    groupMap.get(key)!.push(a);
+  }
+
+  const consolidatedAssets: EnrichedAsset[] = Array.from(groupMap.values()).map((group) => {
+    if (group.length === 1) return group[0];
+
+    const totalQty = group.reduce((s, a) => s + a.quantity, 0);
+    const weightedAvgBuy =
+      group.reduce((s, a) => s + a.averageBuyPrice * a.quantity, 0) / totalQty;
+    const currentPrice = group[0].currentPrice; // same quote for all in group
+    const effectivePrice = currentPrice ?? weightedAvgBuy * fxRate;
+    const marketValue = totalQty * effectivePrice;
+    const costBasis = totalQty * weightedAvgBuy * fxRate;
+
+    return {
+      ...group[0],
+      ids: group.map((a) => a.id),
+      quantity: totalQty,
+      averageBuyPrice: weightedAvgBuy,
       currentPrice,
       marketValue,
       pnl: marketValue - costBasis,
@@ -62,7 +94,7 @@ export default async function AssetsPage() {
           Manage all holdings across your portfolios.
         </p>
       </div>
-      <AssetsTable initialAssets={enrichedAssets} portfolios={portfolioOptions} currency={currency} />
+      <AssetsTable initialAssets={consolidatedAssets} portfolios={portfolioOptions} currency={currency} />
     </main>
   );
 }

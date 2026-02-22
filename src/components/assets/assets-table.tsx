@@ -182,15 +182,25 @@ export function AssetsTable({ initialAssets, portfolios, currency = "USD" }: Pro
   async function handleDelete() {
     if (!pendingDelete) return;
     setDeleteLoading(true);
-    const res = await fetch(`/api/assets/${pendingDelete.id}`, {
-      method: "DELETE",
-    });
+    // Delete all underlying records for this (possibly consolidated) row
+    await Promise.all(
+      pendingDelete.ids.map((id) => fetch(`/api/assets/${id}`, { method: "DELETE" }))
+    );
     setDeleteLoading(false);
-    if (res.ok) {
-      setAssets((prev) => prev.filter((a) => a.id !== pendingDelete.id));
-      setPendingDelete(null);
+    setAssets((prev) => prev.filter((a) => a.id !== pendingDelete.id));
+    setPendingDelete(null);
+    refresh();
+  }
+
+  // After editing a consolidated row, delete the extra underlying records
+  // so they collapse into the one record that was just PATCHed.
+  function makeEditSuccessHandler(asset: EnrichedAsset) {
+    if (asset.ids.length <= 1) return refresh;
+    return async () => {
+      const [, ...extraIds] = asset.ids;
+      await Promise.all(extraIds.map((id) => fetch(`/api/assets/${id}`, { method: "DELETE" })));
       refresh();
-    }
+    };
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -304,7 +314,14 @@ export function AssetsTable({ initialAssets, portfolios, currency = "USD" }: Pro
                 return (
                   <TableRow key={asset.id}>
                     <TableCell className="font-mono font-semibold whitespace-nowrap">
-                      {asset.symbol}
+                      <span className="flex items-center gap-1.5">
+                        {asset.symbol}
+                        {asset.ids.length > 1 && (
+                          <span className="text-[10px] font-medium rounded-full bg-muted text-muted-foreground px-1.5 py-0.5 leading-none">
+                            ×{asset.ids.length}
+                          </span>
+                        )}
+                      </span>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell max-w-[180px]">
                       <span className="block truncate" title={asset.name}>
@@ -403,7 +420,7 @@ export function AssetsTable({ initialAssets, portfolios, currency = "USD" }: Pro
           onOpenChange={(open) => {
             if (!open) setEditingAsset(null);
           }}
-          onSuccess={refresh}
+          onSuccess={makeEditSuccessHandler(editingAsset)}
         />
       )}
 
@@ -419,8 +436,11 @@ export function AssetsTable({ initialAssets, portfolios, currency = "USD" }: Pro
             <DialogTitle>Delete {pendingDelete?.symbol}?</DialogTitle>
             <DialogDescription>
               This will permanently delete{" "}
-              <strong>{pendingDelete?.name}</strong> and all its transaction
-              history. This cannot be undone.
+              <strong>{pendingDelete?.name}</strong>
+              {pendingDelete && pendingDelete.ids.length > 1
+                ? ` (${pendingDelete.ids.length} entries)`
+                : ""}{" "}
+              and all its transaction history. This cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
