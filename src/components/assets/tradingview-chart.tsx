@@ -29,7 +29,8 @@ function TradingViewChartInner({ symbol }: Props) {
       script.type = "text/javascript";
       script.async = true;
       script.innerHTML = JSON.stringify({
-        autosize: true,
+        width: "100%",
+        height: "100%",
         symbol,
         interval: "D",
         timezone: "Etc/UTC",
@@ -39,12 +40,13 @@ function TradingViewChartInner({ symbol }: Props) {
         allow_symbol_change: true,
         calendar: false,
         studies: ["STD;MACD", "STD;RSI"],
+        hide_volume: false,
         support_host: "https://www.tradingview.com",
       });
 
       const widgetDiv = document.createElement("div");
       widgetDiv.className = "tradingview-widget-container__widget";
-      widgetDiv.style.height = "calc(100% - 32px)";
+      widgetDiv.style.height = "100%";
       widgetDiv.style.width = "100%";
 
       container.appendChild(widgetDiv);
@@ -80,7 +82,7 @@ function TradingViewChartInner({ symbol }: Props) {
     <div
       className="tradingview-widget-container rounded-lg border overflow-hidden"
       ref={containerRef}
-      style={{ height: "65vh", minHeight: "400px" }}
+      style={{ height: "70vh", minHeight: "500px" }}
     />
   );
 }
