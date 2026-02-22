@@ -107,9 +107,19 @@ export default async function Home() {
 
       {/* Footer */}
       <footer className="border-t">
-        <div className="container mx-auto px-4 py-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <FolioVaultLogo size={16} className="text-primary" />
-          <span>FolioVault</span>
+        <div className="container mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <FolioVaultLogo size={16} className="text-primary" />
+            <span>&copy; 2026 FolioVault. All rights reserved.</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link href="/terms" className="hover:text-foreground transition-colors">
+              Terms of Service
+            </Link>
+            <Link href="/privacy" className="hover:text-foreground transition-colors">
+              Privacy Policy
+            </Link>
+          </div>
         </div>
       </footer>
     </main>

@@ -113,6 +113,13 @@ export async function deleteAsset(id: string) {
   return prisma.asset.delete({ where: { id } });
 }
 
+export async function getAssetBySymbol(symbol: string, userId: string) {
+  return prisma.asset.findFirst({
+    where: { symbol, portfolio: { userId } },
+    include: { portfolio: { select: { id: true, name: true } } },
+  });
+}
+
 export async function createAsset(input: CreateAssetInput) {
   return prisma.asset.create({
     data: {

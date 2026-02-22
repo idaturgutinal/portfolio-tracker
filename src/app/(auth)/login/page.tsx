@@ -130,12 +130,23 @@ export default function LoginPage() {
         </form>
       </CardContent>
 
-      <CardFooter>
+      <CardFooter className="flex flex-col gap-3">
         <p className="text-sm text-muted-foreground text-center w-full">
           No account?{" "}
           <Link href="/signup" className="underline underline-offset-4 hover:text-foreground">
             Sign up
           </Link>
+        </p>
+        <p className="text-xs text-muted-foreground/70 text-center">
+          By signing in, you agree to our{" "}
+          <Link href="/terms" className="underline underline-offset-4 hover:text-muted-foreground">
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="underline underline-offset-4 hover:text-muted-foreground">
+            Privacy Policy
+          </Link>
+          .
         </p>
       </CardFooter>
     </Card>

@@ -4,9 +4,10 @@ import { memo, useEffect, useRef } from "react";
 
 interface Props {
   symbol: string;
+  allowSymbolChange?: boolean;
 }
 
-function TradingViewChartInner({ symbol }: Props) {
+function TradingViewChartInner({ symbol, allowSymbolChange = true }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -40,7 +41,7 @@ function TradingViewChartInner({ symbol }: Props) {
         theme: getTheme(),
         style: "1",
         locale: "en",
-        allow_symbol_change: true,
+        allow_symbol_change: allowSymbolChange,
         calendar: false,
         studies: [],
         hide_volume: true,

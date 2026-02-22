@@ -14,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Mail, ArrowLeft } from "lucide-react";
 import { signIn } from "next-auth/react";
 
@@ -34,6 +35,8 @@ export default function SignupPage() {
   const [digits, setDigits] = useState<string[]>(Array(6).fill(""));
   const digitRefs = useRef<Array<HTMLInputElement | null>>(Array(6).fill(null));
 
+  const [agreed, setAgreed] = useState(false);
+
   const [step, setStep] = useState<Step>("details");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -47,6 +50,7 @@ export default function SignupPage() {
     if (!email.trim() || !EMAIL_RE.test(email)) return "Enter a valid email address.";
     if (password.length < 8) return "Password must be at least 8 characters.";
     if (password !== confirm) return "Passwords do not match.";
+    if (!agreed) return "You must agree to the Terms of Service and Privacy Policy.";
     return null;
   }
 
@@ -317,6 +321,25 @@ export default function SignupPage() {
               onChange={(e) => setConfirm(e.target.value)}
               disabled={loading}
             />
+          </div>
+
+          <div className="flex items-start gap-2">
+            <Checkbox
+              id="agree"
+              checked={agreed}
+              onCheckedChange={(v) => setAgreed(v === true)}
+              disabled={loading}
+            />
+            <Label htmlFor="agree" className="text-sm font-normal leading-snug">
+              I agree to the{" "}
+              <Link href="/terms" className="underline underline-offset-4 hover:text-foreground" target="_blank">
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" className="underline underline-offset-4 hover:text-foreground" target="_blank">
+                Privacy Policy
+              </Link>
+            </Label>
           </div>
         </CardContent>
 
