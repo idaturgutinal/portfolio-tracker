@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { CreatePortfolioInput, CreateAssetInput, PortfolioSummary } from "@/types";
+import { getBatchQuotes, toMarketSymbol } from "@/services/marketData";
 
 export async function getPortfolios(userId: string) {
   return prisma.portfolio.findMany({
@@ -38,20 +39,34 @@ export async function getPortfolioSummary(
 
   if (!portfolio) return null;
 
-  // Prices would be fetched from a market-data service in a real app.
-  // For now, cost basis is used as a stand-in for current value.
   const totalCost = portfolio.assets.reduce(
     (sum, a) => sum + a.quantity * a.averageBuyPrice,
     0
   );
 
+  // Fetch live prices for all assets
+  const marketSymbols = portfolio.assets.map((a) =>
+    toMarketSymbol(a.symbol, a.assetType)
+  );
+  const quotes = await getBatchQuotes(marketSymbols);
+
+  const totalValue = portfolio.assets.reduce((sum, a) => {
+    const mSym = toMarketSymbol(a.symbol, a.assetType);
+    const quote = quotes.get(mSym);
+    const price = quote?.price ?? a.averageBuyPrice;
+    return sum + a.quantity * price;
+  }, 0);
+
+  const totalGainLoss = totalValue - totalCost;
+  const totalGainLossPct = totalCost > 0 ? totalGainLoss / totalCost : 0;
+
   return {
     id: portfolio.id,
     name: portfolio.name,
-    totalValue: totalCost,
+    totalValue,
     totalCost,
-    totalGainLoss: 0,
-    totalGainLossPct: 0,
+    totalGainLoss,
+    totalGainLossPct,
     assetCount: portfolio.assets.length,
   };
 }
