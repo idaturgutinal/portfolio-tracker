@@ -57,9 +57,9 @@ export function SidebarNav({ userName, userEmail }: Props) {
 
   const navLinkClass = (href: string) =>
     cn(
-      "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+      "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors transition-shadow",
       isActive(href)
-        ? "bg-accent text-accent-foreground"
+        ? "bg-accent text-accent-foreground shadow-sm"
         : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
     );
 
@@ -67,8 +67,12 @@ export function SidebarNav({ userName, userEmail }: Props) {
     <aside className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center gap-2 h-14 px-4 border-b shrink-0">
-        <TrendingUp className="h-5 w-5 text-primary" />
-        <span className="font-semibold text-sm tracking-tight">FolioVault</span>
+        <div className="flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1.5">
+          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10">
+            <TrendingUp className="h-4 w-4 text-primary" />
+          </div>
+          <span className="font-semibold text-sm tracking-tight">FolioVault</span>
+        </div>
       </div>
 
       {/* Main nav */}
@@ -122,8 +126,10 @@ export function SidebarNav({ userName, userEmail }: Props) {
         >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
-        <div className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-primary" />
+        <div className="flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1.5">
+          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10">
+            <TrendingUp className="h-4 w-4 text-primary" />
+          </div>
           <span className="font-semibold text-sm tracking-tight">FolioVault</span>
         </div>
       </header>
@@ -139,7 +145,7 @@ export function SidebarNav({ userName, userEmail }: Props) {
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 bg-background border-r transition-transform duration-200",
+          "fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-background to-muted/30 border-r transition-transform duration-200",
           "md:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}

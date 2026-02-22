@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatPercent } from "@/utils/format";
+import { TrendingUp, TrendingDown } from "lucide-react";
 import type { AssetMetric } from "@/services/dashboard.service";
 
 interface Props {
@@ -40,9 +41,18 @@ function MoverCard({
   currency?: string;
 }) {
   return (
-    <Card>
+    <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">{title}</CardTitle>
+        <div className="flex items-center gap-2">
+          <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${variant === "positive" ? "bg-positive/10" : "bg-negative/10"}`}>
+            {variant === "positive" ? (
+              <TrendingUp className="h-4 w-4 text-positive" />
+            ) : (
+              <TrendingDown className="h-4 w-4 text-negative" />
+            )}
+          </div>
+          <CardTitle className="text-base">{title}</CardTitle>
+        </div>
       </CardHeader>
       <CardContent>
         {assets.length === 0 ? (
