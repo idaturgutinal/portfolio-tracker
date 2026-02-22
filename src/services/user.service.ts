@@ -8,10 +8,10 @@ export async function getUserById(id: string) {
 export async function getUserProfile(id: string): Promise<UserProfile | null> {
   const user = await prisma.user.findUnique({
     where: { id },
-    select: { id: true, name: true, email: true, defaultCurrency: true, createdAt: true },
+    select: { id: true, name: true, email: true, defaultCurrency: true, createdAt: true, password: true },
   });
   if (!user) return null;
-  return { ...user, createdAt: user.createdAt.toISOString() };
+  return { ...user, createdAt: user.createdAt.toISOString(), hasPassword: !!user.password };
 }
 
 export async function updateUserProfile(

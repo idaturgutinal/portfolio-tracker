@@ -31,20 +31,27 @@ export async function DELETE(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { password } = body as { password?: unknown };
-
-    if (typeof password !== "string" || !password) {
-      return NextResponse.json({ error: "Password is required." }, { status: 400 });
-    }
+    const { password, confirmation } = body as { password?: unknown; confirmation?: unknown };
 
     const user = await getUserById(session.user.id);
     if (!user) {
       return NextResponse.json({ error: "User not found." }, { status: 404 });
     }
 
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) {
-      return NextResponse.json({ error: "Incorrect password." }, { status: 400 });
+    if (user.password) {
+      // Email/password user — verify password
+      if (typeof password !== "string" || !password) {
+        return NextResponse.json({ error: "Password is required." }, { status: 400 });
+      }
+      const valid = await bcrypt.compare(password, user.password);
+      if (!valid) {
+        return NextResponse.json({ error: "Incorrect password." }, { status: 400 });
+      }
+    } else {
+      // OAuth user (no password) — require typing "DELETE"
+      if (confirmation !== "DELETE") {
+        return NextResponse.json({ error: "Type DELETE to confirm." }, { status: 400 });
+      }
     }
 
     await deleteUserAccount(session.user.id);

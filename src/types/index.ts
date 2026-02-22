@@ -7,6 +7,7 @@ export interface UserProfile {
   email: string;
   defaultCurrency: string;
   createdAt: string; // ISO string
+  hasPassword: boolean;
 }
 
 // ─── Enriched / view types ───────────────────────────────────────────────────

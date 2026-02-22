@@ -15,9 +15,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export function DangerZoneTab() {
+export function DangerZoneTab({ hasPassword }: { hasPassword: boolean }) {
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +29,9 @@ export function DangerZoneTab() {
       const res = await fetch("/api/user/delete", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify(
+          hasPassword ? { password } : { confirmation }
+        ),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -44,10 +47,13 @@ export function DangerZoneTab() {
   function handleOpenChange(next: boolean) {
     if (!next) {
       setPassword("");
+      setConfirmation("");
       setError(null);
     }
     setOpen(next);
   }
+
+  const canSubmit = hasPassword ? !!password : confirmation === "DELETE";
 
   return (
     <Card className="border-destructive/40">
@@ -69,20 +75,40 @@ export function DangerZoneTab() {
           <DialogHeader>
             <DialogTitle>Delete account?</DialogTitle>
             <DialogDescription>
-              This will permanently delete your account and all your data. Enter
-              your password to confirm.
+              This will permanently delete your account and all your data.{" "}
+              {hasPassword
+                ? "Enter your password to confirm."
+                : "Type DELETE to confirm."}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-1.5 py-2">
-            <Label htmlFor="delete-password">Password</Label>
-            <Input
-              id="delete-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-            />
-          </div>
+
+          {hasPassword ? (
+            <div className="space-y-1.5 py-2">
+              <Label htmlFor="delete-password">Password</Label>
+              <Input
+                id="delete-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+              />
+            </div>
+          ) : (
+            <div className="space-y-1.5 py-2">
+              <Label htmlFor="delete-confirm">
+                Type <span className="font-mono font-semibold">DELETE</span> to confirm
+              </Label>
+              <Input
+                id="delete-confirm"
+                type="text"
+                value={confirmation}
+                onChange={(e) => setConfirmation(e.target.value)}
+                placeholder="DELETE"
+                autoComplete="off"
+              />
+            </div>
+          )}
+
           {error && <p className="text-sm text-destructive">{error}</p>}
           <DialogFooter>
             <Button
@@ -95,7 +121,7 @@ export function DangerZoneTab() {
             <Button
               variant="destructive"
               onClick={handleDelete}
-              disabled={loading || !password}
+              disabled={loading || !canSubmit}
             >
               {loading ? "Deleting…" : "Delete account"}
             </Button>

@@ -36,7 +36,7 @@ export function SettingsShell({ profile }: { profile: UserProfile }) {
       </TabsContent>
 
       <TabsContent value="danger">
-        <DangerZoneTab />
+        <DangerZoneTab hasPassword={profile.hasPassword} />
       </TabsContent>
     </Tabs>
   );
