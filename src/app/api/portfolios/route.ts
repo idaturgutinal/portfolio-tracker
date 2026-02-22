@@ -21,11 +21,11 @@ export async function POST(req: NextRequest) {
 
     const trimmed = name.trim();
 
-    // Check for duplicate name (case-insensitive)
+    // Check for duplicate name (SQLite LIKE is case-insensitive by default for ASCII)
     const existing = await prisma.portfolio.findFirst({
       where: {
         userId: session.user.id,
-        name: { equals: trimmed, mode: "insensitive" },
+        name: { equals: trimmed },
       },
     });
     if (existing) {
