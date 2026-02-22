@@ -20,6 +20,7 @@ import {
   X,
   TrendingUp,
 } from "lucide-react";
+import { SymbolSearch } from "@/components/symbol-search";
 
 const MAIN_NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -74,6 +75,9 @@ export function SidebarNav({ userName, userEmail }: Props) {
           <span className="font-bold text-sm tracking-tight">FolioVault</span>
         </div>
       </div>
+
+      {/* Symbol search */}
+      <SymbolSearch />
 
       {/* Main nav */}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
