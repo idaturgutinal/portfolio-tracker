@@ -134,3 +134,13 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Vercel
+.vercel
+
+# Local DB
+prisma/dev.db
+prisma/dev.db-journal
+
+# macOS
+.DS_Store
