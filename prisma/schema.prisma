@@ -1,0 +1,77 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(cuid())
+  name            String
+  email           String   @unique
+  password        String
+  defaultCurrency String   @default("USD")
+  createdAt       DateTime @default(now())
+  portfolios      Portfolio[]
+  alerts          PriceAlert[]
+  @@map("users")
+}
+
+model Portfolio {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assets    Asset[]
+  @@map("portfolios")
+}
+
+model Asset {
+  id              String        @id @default(cuid())
+  portfolioId     String
+  symbol          String
+  name            String
+  assetType       String
+  quantity        Float
+  averageBuyPrice Float
+  currency        String
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  portfolio       Portfolio     @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  transactions    Transaction[]
+  alerts          PriceAlert[]
+  @@map("assets")
+}
+
+model Transaction {
+  id           String   @id @default(cuid())
+  assetId      String
+  type         String
+  quantity     Float
+  pricePerUnit Float
+  fees         Float    @default(0)
+  date         DateTime
+  notes        String?
+  asset        Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  @@map("transactions")
+}
+
+model PriceAlert {
+  id          String    @id @default(cuid())
+  userId      String
+  assetId     String
+  symbol      String
+  condition   String
+  targetPrice Float
+  active      Boolean   @default(true)
+  triggeredAt DateTime?
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  asset       Asset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  @@map("price_alerts")
+}

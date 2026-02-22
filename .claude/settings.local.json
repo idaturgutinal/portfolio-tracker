@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --version:*)",
+      "Bash(npm:*)",
+      "Bash(/usr/local/bin/node:*)",
+      "Bash(/opt/homebrew/bin/node:*)",
+      "Bash(~/.nvm/versions/node/*/bin/node)",
+      "Bash(export PATH=\"/usr/local/bin:/opt/homebrew/bin:$PATH\")",
+      "Bash(zsh -l -c \"which node && node --version && npm --version\")",
+      "Bash(mdfind:*)",
+      "Bash(test:*)",
+      "Bash(openssl rand:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(/Users/ida/.nvm/versions/node/v22.14.0/bin/npx prisma migrate dev --name add-user-preferences)",
+      "mcp__ide__getDiagnostics",
+      "Bash(git --version:*)",
+      "Bash(git ls-remote:*)",
+      "Bash(curl:*)",
+      "Bash(export PATH=\"$HOME/.local/node/bin:$PATH\")",
+      "Bash(~/.zshrc)"
+    ]
+  }
+}
