@@ -71,6 +71,13 @@ export async function getPortfolioSummary(
   };
 }
 
+export async function getAssetById(id: string, userId: string) {
+  return prisma.asset.findFirst({
+    where: { id, portfolio: { userId } },
+    include: { portfolio: { select: { id: true, name: true } } },
+  });
+}
+
 export async function getAssetsByUser(userId: string) {
   return prisma.asset.findMany({
     where: { portfolio: { userId } },

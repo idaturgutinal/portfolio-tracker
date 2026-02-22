@@ -11,6 +11,13 @@ export async function getAlertsByUser(userId: string) {
   });
 }
 
+export async function getAlertsBySymbol(userId: string, symbol: string) {
+  return prisma.priceAlert.findMany({
+    where: { userId, symbol },
+    orderBy: [{ active: "desc" }, { createdAt: "desc" }],
+  });
+}
+
 export async function createAlert(userId: string, input: CreateAlertInput) {
   return prisma.priceAlert.create({
     data: {

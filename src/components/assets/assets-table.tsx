@@ -345,7 +345,11 @@ export function AssetsTable({ initialAssets, portfolios: initialPortfolios, curr
                 const positive = asset.pnl >= 0;
                 const pnlClass = positive ? "text-positive" : "text-negative";
                 return (
-                  <TableRow key={asset.id}>
+                  <TableRow
+                    key={asset.id}
+                    className="cursor-pointer hover:bg-accent/50"
+                    onClick={() => router.push(`/dashboard/assets/${asset.id}`)}
+                  >
                     <TableCell className="font-mono font-semibold whitespace-nowrap">
                       <span className="flex items-center gap-1.5">
                         {asset.symbol}
@@ -398,7 +402,7 @@ export function AssetsTable({ initialAssets, portfolios: initialPortfolios, curr
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
-                          onClick={() => setEditingAsset(asset)}
+                          onClick={(e) => { e.stopPropagation(); setEditingAsset(asset); }}
                           title="Edit asset"
                         >
                           <Pencil className="h-3.5 w-3.5" />
@@ -407,7 +411,7 @@ export function AssetsTable({ initialAssets, portfolios: initialPortfolios, curr
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => setPendingDelete(asset)}
+                          onClick={(e) => { e.stopPropagation(); setPendingDelete(asset); }}
                           title="Delete asset"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
