@@ -14,6 +14,7 @@ import {
   BarChart2,
   Bell,
   Settings,
+  LifeBuoy,
   LogOut,
   Menu,
   X,
@@ -30,6 +31,7 @@ const MAIN_NAV = [
 ];
 
 const BOTTOM_NAV = [
+  { href: "/dashboard/support", label: "Support", icon: LifeBuoy },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
