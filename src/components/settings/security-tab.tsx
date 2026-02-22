@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Shield } from "lucide-react";
 
-export function SecurityTab() {
+export function SecurityTab({ hasPassword }: { hasPassword: boolean }) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -46,6 +47,28 @@ export function SecurityTab() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (!hasPassword) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Security</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-start gap-3">
+          <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10 shrink-0">
+            <Shield className="h-5 w-5 text-primary" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Signed in with Google</p>
+            <p className="text-sm text-muted-foreground">
+              Your account is secured through Google. Password management is
+              handled by your Google account settings.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (

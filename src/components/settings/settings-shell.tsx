@@ -24,7 +24,7 @@ export function SettingsShell({ profile }: { profile: UserProfile }) {
       </TabsContent>
 
       <TabsContent value="security">
-        <SecurityTab />
+        <SecurityTab hasPassword={profile.hasPassword} />
       </TabsContent>
 
       <TabsContent value="preferences">
