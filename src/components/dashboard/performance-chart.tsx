@@ -62,7 +62,7 @@ export function PerformanceChart({ performance }: Props) {
     .map((d) => d.date);
 
   return (
-    <Card className="h-full hover:shadow-md transition-shadow">
+    <Card className="h-full shadow-md hover:shadow-lg transition-shadow border-border/60">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle>Portfolio Value</CardTitle>
         <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>

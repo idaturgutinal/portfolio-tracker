@@ -59,7 +59,7 @@ export function SidebarNav({ userName, userEmail }: Props) {
     cn(
       "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors transition-shadow",
       isActive(href)
-        ? "bg-accent text-accent-foreground shadow-sm"
+        ? "bg-accent text-accent-foreground shadow-sm border border-border/50"
         : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
     );
 
@@ -67,11 +67,11 @@ export function SidebarNav({ userName, userEmail }: Props) {
     <aside className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center gap-2 h-14 px-4 border-b shrink-0">
-        <div className="flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1.5">
-          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10">
+        <div className="flex items-center gap-2.5 rounded-full bg-muted/80 px-3.5 py-2 shadow-sm">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/15">
             <TrendingUp className="h-4 w-4 text-primary" />
           </div>
-          <span className="font-semibold text-sm tracking-tight">FolioVault</span>
+          <span className="font-bold text-sm tracking-tight">FolioVault</span>
         </div>
       </div>
 
@@ -126,11 +126,11 @@ export function SidebarNav({ userName, userEmail }: Props) {
         >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
-        <div className="flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1.5">
-          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10">
+        <div className="flex items-center gap-2.5 rounded-full bg-muted/80 px-3.5 py-2 shadow-sm">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/15">
             <TrendingUp className="h-4 w-4 text-primary" />
           </div>
-          <span className="font-semibold text-sm tracking-tight">FolioVault</span>
+          <span className="font-bold text-sm tracking-tight">FolioVault</span>
         </div>
       </header>
 

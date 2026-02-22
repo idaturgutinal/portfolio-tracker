@@ -74,13 +74,13 @@ function MetricCard({
   iconBgClassName?: string;
 }) {
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="shadow-md hover:shadow-lg transition-shadow border-border/60">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
         </CardTitle>
-        <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", iconBgClassName ?? "bg-primary/10")}>
-          <Icon className={cn("h-4 w-4", iconClassName ?? "text-primary")} />
+        <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl", iconBgClassName ?? "bg-primary/10")}>
+          <Icon className={cn("h-5 w-5", iconClassName ?? "text-primary")} />
         </div>
       </CardHeader>
       <CardContent>

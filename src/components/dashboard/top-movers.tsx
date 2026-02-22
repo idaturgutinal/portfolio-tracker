@@ -41,14 +41,14 @@ function MoverCard({
   currency?: string;
 }) {
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="shadow-md hover:shadow-lg transition-shadow border-border/60">
       <CardHeader className="pb-3">
-        <div className="flex items-center gap-2">
-          <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${variant === "positive" ? "bg-positive/10" : "bg-negative/10"}`}>
+        <div className="flex items-center gap-2.5">
+          <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${variant === "positive" ? "bg-positive/10" : "bg-negative/10"}`}>
             {variant === "positive" ? (
-              <TrendingUp className="h-4 w-4 text-positive" />
+              <TrendingUp className="h-5 w-5 text-positive" />
             ) : (
-              <TrendingDown className="h-4 w-4 text-negative" />
+              <TrendingDown className="h-5 w-5 text-negative" />
             )}
           </div>
           <CardTitle className="text-base">{title}</CardTitle>

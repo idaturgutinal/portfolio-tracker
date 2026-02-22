@@ -70,7 +70,7 @@ export function AllocationChart({ byType, byAsset }: Props) {
       : byAsset.map((d) => ({ name: d.symbol, value: d.value, pct: d.pct }));
 
   return (
-    <Card className="h-full hover:shadow-md transition-shadow">
+    <Card className="h-full shadow-md hover:shadow-lg transition-shadow border-border/60">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle>Allocation</CardTitle>
         <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)}>

@@ -21,7 +21,7 @@ export default async function DashboardLayout({
       <div className="relative pt-14 md:pt-0 md:pl-64">
         {/* Subtle dot-grid texture */}
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.03]"
+          className="pointer-events-none absolute inset-0 opacity-[0.06]"
           style={{
             backgroundImage: "radial-gradient(circle, currentColor 1px, transparent 1px)",
             backgroundSize: "24px 24px",
