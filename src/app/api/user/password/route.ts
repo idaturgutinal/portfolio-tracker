@@ -26,15 +26,9 @@ export async function PATCH(req: NextRequest) {
       newPassword?: unknown;
     };
 
-    if (typeof currentPassword !== "string" || typeof newPassword !== "string") {
+    if (typeof newPassword !== "string" || !newPassword) {
       return NextResponse.json(
-        { error: "currentPassword and newPassword are required." },
-        { status: 400 }
-      );
-    }
-    if (!currentPassword || !newPassword) {
-      return NextResponse.json(
-        { error: "currentPassword and newPassword are required." },
+        { error: "New password is required." },
         { status: 400 }
       );
     }
@@ -54,8 +48,17 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (!user.password) {
+      // Google-only user setting a password for the first time
+      // No currentPassword required
+      const hash = await bcrypt.hash(newPassword, 12);
+      await updateUserPassword(session.user.id, hash);
+      return NextResponse.json({ success: true });
+    }
+
+    // Existing password user — verify current password
+    if (typeof currentPassword !== "string" || !currentPassword) {
       return NextResponse.json(
-        { error: "Password cannot be changed for accounts signed in with Google." },
+        { error: "Current password is required." },
         { status: 400 }
       );
     }

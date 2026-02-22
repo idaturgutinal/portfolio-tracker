@@ -1,6 +1,14 @@
 /**
  * In-memory rate limiter — suitable for single-instance and Vercel serverless
  * (per-instance limit; for multi-instance you'd use Redis/Upstash).
+ *
+ * **Limitation**: The in-memory Map resets on every cold start and is scoped to
+ * a single serverless instance. A determined attacker can bypass limits by
+ * waiting for a new instance or hitting different instances.
+ *
+ * TODO: For production-grade rate limiting, consider replacing with
+ * `@upstash/ratelimit` backed by Upstash Redis for distributed, persistent
+ * counters that survive cold starts and span all instances.
  */
 
 interface Bucket {
