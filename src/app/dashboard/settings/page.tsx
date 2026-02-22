@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { getUserProfile } from "@/services/user.service";
 import { SettingsShell } from "@/components/settings/settings-shell";
+import { UserGuidePanel } from "@/components/onboarding/user-guide-panel";
 
 export const metadata = { title: "Settings — Portfolio Tracker" };
 
@@ -20,6 +21,7 @@ export default async function SettingsPage() {
           Manage your account, preferences, and data.
         </p>
       </div>
+      <UserGuidePanel />
       <SettingsShell profile={profile} />
     </main>
   );

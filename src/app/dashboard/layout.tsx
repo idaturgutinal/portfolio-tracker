@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { SidebarNav } from "@/components/sidebar-nav";
+import { OnboardingDialog } from "@/components/onboarding/onboarding-dialog";
 
 export default async function DashboardLayout({
   children,
@@ -16,6 +17,7 @@ export default async function DashboardLayout({
         userName={session.user.name ?? session.user.email ?? ""}
         userEmail={session.user.email ?? undefined}
       />
+      <OnboardingDialog userId={session.user.id} />
       <div className="pt-14 md:pt-0 md:pl-64">
         {children}
       </div>
