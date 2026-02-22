@@ -34,6 +34,7 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
+  FolderOpen,
   Pencil,
   Plus,
   RefreshCw,
@@ -118,10 +119,11 @@ interface Props {
   currency?: string;
 }
 
-export function AssetsTable({ initialAssets, portfolios, currency = "USD" }: Props) {
+export function AssetsTable({ initialAssets, portfolios: initialPortfolios, currency = "USD" }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [assets, setAssets] = useState(initialAssets);
+  const [portfolioList, setPortfolioList] = useState(initialPortfolios);
 
   // Toolbar
   const [search, setSearch] = useState("");
@@ -136,6 +138,12 @@ export function AssetsTable({ initialAssets, portfolios, currency = "USD" }: Pro
   const [editingAsset, setEditingAsset] = useState<EnrichedAsset | null>(null);
   const [pendingDelete, setPendingDelete] = useState<EnrichedAsset | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Portfolio management
+  const [manageOpen, setManageOpen] = useState(false);
+  const [pendingDeletePortfolio, setPendingDeletePortfolio] = useState<PortfolioOption | null>(null);
+  const [portfolioDeleteLoading, setPortfolioDeleteLoading] = useState(false);
+  const [portfolioError, setPortfolioError] = useState<string | null>(null);
 
   // ── Filtering + sorting ──────────────────────────────────────────────────
   const filtered = useMemo(() => {
@@ -192,6 +200,27 @@ export function AssetsTable({ initialAssets, portfolios, currency = "USD" }: Pro
     refresh();
   }
 
+  async function handleDeletePortfolio() {
+    if (!pendingDeletePortfolio) return;
+    setPortfolioDeleteLoading(true);
+    setPortfolioError(null);
+    try {
+      const res = await fetch(`/api/portfolios/${pendingDeletePortfolio.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setPortfolioError((body as { error?: string }).error ?? "Failed to delete portfolio.");
+        setPortfolioDeleteLoading(false);
+        return;
+      }
+      setPortfolioList((prev) => prev.filter((p) => p.id !== pendingDeletePortfolio.id));
+      setPendingDeletePortfolio(null);
+      refresh();
+    } catch {
+      setPortfolioError("Failed to delete portfolio.");
+    }
+    setPortfolioDeleteLoading(false);
+  }
+
   // After editing a consolidated row, delete the extra underlying records
   // so they collapse into the one record that was just PATCHed.
   function makeEditSuccessHandler(asset: EnrichedAsset) {
@@ -242,6 +271,10 @@ export function AssetsTable({ initialAssets, portfolios, currency = "USD" }: Pro
             title="Refresh prices"
           >
             <RefreshCw className={`h-4 w-4 ${isPending ? "animate-spin" : ""}`} />
+          </Button>
+          <Button variant="outline" onClick={() => { setManageOpen(true); setPortfolioError(null); }}>
+            <FolderOpen className="h-4 w-4 mr-1" />
+            Portfolios
           </Button>
           <Button onClick={() => setAddOpen(true)}>
             <Plus className="h-4 w-4 mr-1" />
@@ -404,7 +437,7 @@ export function AssetsTable({ initialAssets, portfolios, currency = "USD" }: Pro
       {addOpen && (
         <AssetFormDialog
           mode="add"
-          portfolios={portfolios}
+          portfolios={portfolioList}
           open={addOpen}
           onOpenChange={setAddOpen}
           onSuccess={refresh}
@@ -424,7 +457,7 @@ export function AssetsTable({ initialAssets, portfolios, currency = "USD" }: Pro
         />
       )}
 
-      {/* Delete confirmation */}
+      {/* Delete asset confirmation */}
       <Dialog
         open={!!pendingDelete}
         onOpenChange={(open) => {
@@ -457,6 +490,92 @@ export function AssetsTable({ initialAssets, portfolios, currency = "USD" }: Pro
               disabled={deleteLoading}
             >
               {deleteLoading ? "Deleting…" : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Portfolios dialog */}
+      <Dialog open={manageOpen} onOpenChange={setManageOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Manage Portfolios</DialogTitle>
+            <DialogDescription>
+              Delete empty portfolios you no longer need.
+            </DialogDescription>
+          </DialogHeader>
+          {portfolioError && (
+            <p className="text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2">
+              {portfolioError}
+            </p>
+          )}
+          {portfolioList.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">No portfolios yet.</p>
+          ) : (
+            <ul className="space-y-2">
+              {portfolioList.map((p) => {
+                const assetCount = assets.filter((a) => a.portfolioId === p.id).length;
+                return (
+                  <li
+                    key={p.id}
+                    className="flex items-center justify-between rounded-md border px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm truncate">{p.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {assetCount} asset{assetCount !== 1 ? "s" : ""}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0 text-destructive hover:text-destructive"
+                      onClick={() => { setPendingDeletePortfolio(p); setPortfolioError(null); }}
+                      title="Delete portfolio"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete portfolio confirmation */}
+      <Dialog
+        open={!!pendingDeletePortfolio}
+        onOpenChange={(open) => {
+          if (!open) { setPendingDeletePortfolio(null); setPortfolioError(null); }
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete &ldquo;{pendingDeletePortfolio?.name}&rdquo;?</DialogTitle>
+            <DialogDescription>
+              This will permanently delete the portfolio. Portfolios with assets cannot be deleted — remove the assets first.
+            </DialogDescription>
+          </DialogHeader>
+          {portfolioError && (
+            <p className="text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2">
+              {portfolioError}
+            </p>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPendingDeletePortfolio(null)}
+              disabled={portfolioDeleteLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeletePortfolio}
+              disabled={portfolioDeleteLoading}
+            >
+              {portfolioDeleteLoading ? "Deleting…" : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>
