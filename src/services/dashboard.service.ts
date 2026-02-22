@@ -33,6 +33,8 @@ export interface DashboardData {
   };
   topGainers: AssetMetric[];
   topLosers: AssetMetric[];
+  /** All asset metrics, unsorted */
+  allAssets: AssetMetric[];
   /** true if any asset price is sourced from stale/missing market data */
   pricesStale: boolean;
 }
@@ -150,6 +152,7 @@ export async function getDashboardData(
     performance,
     topGainers,
     topLosers,
+    allAssets: assetMetrics,
     pricesStale,
   };
 }
