@@ -9,6 +9,7 @@ import {
   Eye,
   ArrowRight,
 } from "lucide-react";
+import { FolioVaultLogo } from "@/components/folio-vault-logo";
 
 const FEATURES = [
   {
@@ -59,7 +60,7 @@ export default async function Home() {
         <div className="relative container mx-auto px-4 py-32 md:py-44 flex flex-col items-center text-center">
           {/* Logo pill */}
           <div className="inline-flex items-center gap-2 rounded-full border bg-background/80 backdrop-blur px-4 py-1.5 mb-6 text-sm font-medium">
-            <TrendingUp className="h-4 w-4 text-primary" />
+            <FolioVaultLogo size={16} className="text-primary" />
             FolioVault
           </div>
 
@@ -107,7 +108,7 @@ export default async function Home() {
       {/* Footer */}
       <footer className="border-t">
         <div className="container mx-auto px-4 py-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <TrendingUp className="h-4 w-4 text-primary" />
+          <FolioVaultLogo size={16} className="text-primary" />
           <span>FolioVault</span>
         </div>
       </footer>

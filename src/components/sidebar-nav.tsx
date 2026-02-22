@@ -18,9 +18,9 @@ import {
   LogOut,
   Menu,
   X,
-  TrendingUp,
 } from "lucide-react";
 import { SymbolSearch } from "@/components/symbol-search";
+import { FolioVaultLogo } from "@/components/folio-vault-logo";
 
 const MAIN_NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -70,7 +70,7 @@ export function SidebarNav({ userName, userEmail }: Props) {
       <div className="flex items-center gap-2 h-14 px-4 border-b shrink-0">
         <div className="flex items-center gap-2.5 rounded-full bg-muted/80 px-3.5 py-2 shadow-sm">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/15">
-            <TrendingUp className="h-4 w-4 text-primary" />
+            <FolioVaultLogo size={16} className="text-primary" />
           </div>
           <span className="font-bold text-sm tracking-tight">FolioVault</span>
         </div>
@@ -132,7 +132,7 @@ export function SidebarNav({ userName, userEmail }: Props) {
         </button>
         <div className="flex items-center gap-2.5 rounded-full bg-muted/80 px-3.5 py-2 shadow-sm">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/15">
-            <TrendingUp className="h-4 w-4 text-primary" />
+            <FolioVaultLogo size={16} className="text-primary" />
           </div>
           <span className="font-bold text-sm tracking-tight">FolioVault</span>
         </div>

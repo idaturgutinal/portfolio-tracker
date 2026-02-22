@@ -1,4 +1,5 @@
-import { TrendingUp, PieChart, Shield, BarChart2 } from "lucide-react";
+import { PieChart, Shield, BarChart2 } from "lucide-react";
+import { FolioVaultLogo } from "@/components/folio-vault-logo";
 
 const HIGHLIGHTS = [
   { icon: PieChart, text: "Multi-asset portfolio tracking" },
@@ -13,7 +14,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground flex-col justify-center px-12 xl:px-20">
         <div className="max-w-md space-y-6">
           <div className="flex items-center gap-2.5">
-            <TrendingUp className="h-7 w-7" />
+            <FolioVaultLogo size={28} />
             <span className="text-2xl font-bold tracking-tight">FolioVault</span>
           </div>
 
@@ -37,7 +38,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <div className="flex flex-1 flex-col items-center justify-center bg-background px-4 py-12">
         {/* Mobile-only branding */}
         <div className="flex items-center gap-2 mb-8 lg:hidden">
-          <TrendingUp className="h-5 w-5 text-primary" />
+          <FolioVaultLogo size={20} className="text-primary" />
           <span className="font-semibold text-sm tracking-tight">FolioVault</span>
         </div>
 
