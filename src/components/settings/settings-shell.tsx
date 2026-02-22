@@ -6,7 +6,6 @@ import { SecurityTab } from "./security-tab";
 import { PreferencesTab } from "./preferences-tab";
 import { ExportTab } from "./export-tab";
 import { DangerZoneTab } from "./danger-zone-tab";
-import { SupportTab } from "./support-tab";
 import type { UserProfile } from "@/types";
 
 export function SettingsShell({ profile }: { profile: UserProfile }) {
@@ -17,7 +16,6 @@ export function SettingsShell({ profile }: { profile: UserProfile }) {
         <TabsTrigger value="security">Security</TabsTrigger>
         <TabsTrigger value="preferences">Preferences</TabsTrigger>
         <TabsTrigger value="export">Export</TabsTrigger>
-        <TabsTrigger value="support">Support</TabsTrigger>
         <TabsTrigger value="danger">Danger Zone</TabsTrigger>
       </TabsList>
 
@@ -35,10 +33,6 @@ export function SettingsShell({ profile }: { profile: UserProfile }) {
 
       <TabsContent value="export">
         <ExportTab />
-      </TabsContent>
-
-      <TabsContent value="support">
-        <SupportTab />
       </TabsContent>
 
       <TabsContent value="danger">
