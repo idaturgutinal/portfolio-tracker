@@ -28,9 +28,12 @@ function TradingViewChartInner({ symbol }: Props) {
         "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
       script.type = "text/javascript";
       script.async = true;
+      const rect = container.getBoundingClientRect();
+      const h = Math.max(Math.round(rect.height), 600);
+
       script.innerHTML = JSON.stringify({
-        width: "100%",
-        height: "100%",
+        width: Math.round(rect.width),
+        height: h,
         symbol,
         interval: "D",
         timezone: "Etc/UTC",
@@ -39,17 +42,11 @@ function TradingViewChartInner({ symbol }: Props) {
         locale: "en",
         allow_symbol_change: true,
         calendar: false,
-        studies: ["STD;MACD", "STD;RSI"],
-        hide_volume: false,
+        studies: [],
+        hide_volume: true,
         support_host: "https://www.tradingview.com",
       });
 
-      const widgetDiv = document.createElement("div");
-      widgetDiv.className = "tradingview-widget-container__widget";
-      widgetDiv.style.height = "100%";
-      widgetDiv.style.width = "100%";
-
-      container.appendChild(widgetDiv);
       container.appendChild(script);
     }
 
@@ -72,8 +69,18 @@ function TradingViewChartInner({ symbol }: Props) {
       attributeFilter: ["class"],
     });
 
+    // Re-create on window resize (debounced)
+    let resizeTimer: ReturnType<typeof setTimeout>;
+    function handleResize() {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(createWidget, 300);
+    }
+    window.addEventListener("resize", handleResize);
+
     return () => {
       observer.disconnect();
+      window.removeEventListener("resize", handleResize);
+      clearTimeout(resizeTimer);
       if (container) container.innerHTML = "";
     };
   }, [symbol]);
@@ -82,7 +89,7 @@ function TradingViewChartInner({ symbol }: Props) {
     <div
       className="tradingview-widget-container rounded-lg border overflow-hidden"
       ref={containerRef}
-      style={{ height: "70vh", minHeight: "500px" }}
+      style={{ height: "80vh", minHeight: "600px" }}
     />
   );
 }
