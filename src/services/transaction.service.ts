@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { TransactionType } from "@prisma/client";
+import { TransactionType } from "@/types";
 import type { CreateTransactionInput } from "@/types";
 
 export async function getTransactionsByUser(userId: string) {

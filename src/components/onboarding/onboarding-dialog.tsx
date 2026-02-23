@@ -50,7 +50,7 @@ export function OnboardingDialog({ userId }: Props) {
             <div>
               <DialogTitle className="text-xl">Welcome to Portfolio Tracker</DialogTitle>
               <p className="text-sm text-muted-foreground mt-0.5">
-                Here's how to get the most out of the app — takes 2 minutes to read.
+                Here&apos;s how to get the most out of the app — takes 2 minutes to read.
               </p>
             </div>
           </div>

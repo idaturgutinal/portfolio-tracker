@@ -84,7 +84,7 @@ export function SupportForm() {
         {error && <p className="text-sm text-destructive">{error}</p>}
         {success && (
           <p className="text-sm text-positive">
-            Your message has been sent. We'll get back to you shortly.
+            Your message has been sent. We&apos;ll get back to you shortly.
           </p>
         )}
         <Button onClick={handleSubmit} disabled={loading}>

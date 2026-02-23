@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -78,9 +79,9 @@ export function AlertsTable({ initialAlerts, assetOptions }: Props) {
       {assetOptions.length === 0 && (
         <p className="text-sm text-muted-foreground rounded-md border px-4 py-3">
           You need to add assets before creating alerts. Visit the{" "}
-          <a href="/dashboard/assets" className="underline underline-offset-4">
+          <Link href="/dashboard/assets" className="underline underline-offset-4">
             Assets
-          </a>{" "}
+          </Link>{" "}
           page first.
         </p>
       )}

@@ -4,6 +4,7 @@ import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/lib/auth.config";
+import { rateLimit } from "@/lib/rate-limit";
 import type { DefaultSession } from "next-auth";
 
 declare module "next-auth" {
@@ -12,13 +13,6 @@ declare module "next-auth" {
   }
   interface Session {
     user: { id: string; defaultCurrency: string } & DefaultSession["user"];
-  }
-}
-
-declare module "next-auth/jwt" {
-  interface JWT {
-    id?: string;
-    defaultCurrency?: string;
   }
 }
 
@@ -38,6 +32,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const email = (credentials?.email as string | undefined)?.trim().toLowerCase();
         const password = credentials?.password as string | undefined;
         if (!email || !password) return null;
+
+        // Rate limit: 5 attempts per email per 15 minutes
+        const rl = rateLimit(`login:${email}`, 5, 15 * 60 * 1000);
+        if (!rl.allowed) return null;
+
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user || !user.password) return null;
         const valid = await bcrypt.compare(password, user.password);

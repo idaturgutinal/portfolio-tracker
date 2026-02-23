@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useTransition } from "react";
+import { useState, useMemo, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   Table,
@@ -34,6 +34,8 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
   FolderOpen,
   Pencil,
   Plus,
@@ -45,6 +47,8 @@ import {
 import { EmptyState } from "@/components/empty-state";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
+
+const PAGE_SIZE = 25;
 
 const ASSET_TYPES = ["STOCK", "CRYPTO", "ETF", "MUTUAL_FUND", "BOND"] as const;
 
@@ -172,6 +176,19 @@ export function AssetsTable({ initialAssets, portfolios: initialPortfolios, curr
       return sortDir === "asc" ? cmp : -cmp;
     });
   }, [filtered, sortField, sortDir]);
+
+  // ── Pagination ──────────────────────────────────────────────────────────
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const paginated = useMemo(
+    () => sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [sorted, page]
+  );
+
+  // Reset to page 1 when filters/search change
+  useEffect(() => {
+    setPage(1);
+  }, [typeFilter, search]);
 
   function handleSort(field: SortField) {
     if (field === sortField) {
@@ -341,7 +358,7 @@ export function AssetsTable({ initialAssets, portfolios: initialPortfolios, curr
             </TableHeader>
 
             <TableBody>
-              {sorted.map((asset) => {
+              {paginated.map((asset) => {
                 const positive = asset.pnl >= 0;
                 const pnlClass = positive ? "text-positive" : "text-negative";
                 return (
@@ -423,6 +440,35 @@ export function AssetsTable({ initialAssets, portfolios: initialPortfolios, curr
               })}
             </TableBody>
           </Table>
+        </div>
+      )}
+
+      {/* Pagination controls */}
+      {sorted.length > 0 && totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Page {page} of {totalPages}
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+            >
+              Next
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
         </div>
       )}
 

@@ -13,7 +13,7 @@ export function SymbolSearch() {
   const [results, setResults] = useState<SymbolSearchResult[]>([]);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
@@ -32,7 +32,7 @@ export function SymbolSearch() {
       const value = e.target.value;
       setQuery(value);
       setActiveIndex(-1);
-      clearTimeout(timerRef.current);
+      if (timerRef.current) clearTimeout(timerRef.current);
 
       if (!value.trim()) {
         setResults([]);

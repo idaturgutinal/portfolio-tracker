@@ -41,7 +41,7 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
-  const cooldownRef = useRef<ReturnType<typeof setInterval>>();
+  const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Step 1 helpers ──────────────────────────────────────────────────────
 
@@ -171,10 +171,10 @@ export default function SignupPage() {
 
   function startCooldown() {
     setResendCooldown(60);
-    clearInterval(cooldownRef.current);
+    if (cooldownRef.current) clearInterval(cooldownRef.current);
     cooldownRef.current = setInterval(() => {
       setResendCooldown((n) => {
-        if (n <= 1) { clearInterval(cooldownRef.current); return 0; }
+        if (n <= 1) { if (cooldownRef.current) clearInterval(cooldownRef.current); return 0; }
         return n - 1;
       });
     }, 1000);

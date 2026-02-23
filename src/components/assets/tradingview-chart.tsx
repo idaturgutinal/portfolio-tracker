@@ -84,7 +84,7 @@ function TradingViewChartInner({ symbol, allowSymbolChange = true }: Props) {
       clearTimeout(resizeTimer);
       if (container) container.innerHTML = "";
     };
-  }, [symbol]);
+  }, [symbol, allowSymbolChange]);
 
   return (
     <div

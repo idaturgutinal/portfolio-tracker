@@ -76,7 +76,7 @@ export function AssetFormDialog(props: Props) {
   const [portfolioList, setPortfolioList] = useState<PortfolioOption[]>(
     !isEdit ? (props as AddMode).portfolios : []
   );
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -86,7 +86,7 @@ export function AssetFormDialog(props: Props) {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       set("symbol", value);
-      clearTimeout(timerRef.current);
+      if (timerRef.current) clearTimeout(timerRef.current);
       if (!value.trim()) {
         setResults([]);
         setDropdownOpen(false);

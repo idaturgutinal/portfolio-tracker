@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getBatchQuotes, toMarketSymbol } from "@/services/marketData";
 import type { CreateAlertInput, TriggeredAlert } from "@/types";
-import type { AlertCondition } from "@prisma/client";
 
 export async function getAlertsByUser(userId: string) {
   return prisma.priceAlert.findMany({
@@ -24,7 +23,7 @@ export async function createAlert(userId: string, input: CreateAlertInput) {
       userId,
       assetId: input.assetId,
       symbol: input.symbol,
-      condition: input.condition as AlertCondition,
+      condition: input.condition,
       targetPrice: input.targetPrice,
     },
   });

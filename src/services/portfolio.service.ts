@@ -103,7 +103,7 @@ export async function updateAsset(id: string, data: UpdateAssetInput) {
     data: {
       ...rest,
       ...(assetType && {
-        assetType: assetType as import("@prisma/client").AssetType,
+        assetType,
       }),
     },
   });
@@ -126,7 +126,7 @@ export async function createAsset(input: CreateAssetInput) {
       portfolioId: input.portfolioId,
       symbol: input.symbol,
       name: input.name,
-      assetType: input.assetType as import("@prisma/client").AssetType,
+      assetType: input.assetType,
       quantity: input.quantity,
       averageBuyPrice: input.averageBuyPrice,
       currency: input.currency,

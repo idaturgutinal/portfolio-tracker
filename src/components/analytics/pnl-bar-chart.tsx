@@ -46,7 +46,7 @@ function PnlTooltip({ active, payload }: TooltipProps<number, string>) {
   );
 }
 
-export function PnlBarChart({ assets, currency = "USD" }: Props) {
+export function PnlBarChart({ assets }: Props) {
   if (assets.length === 0) {
     return (
       <Card>

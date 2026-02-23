@@ -1,5 +1,20 @@
 export type { Portfolio, Asset, Transaction, User } from "@prisma/client";
-export { AssetType, TransactionType } from "@prisma/client";
+
+export const AssetType = {
+  STOCK: "STOCK",
+  CRYPTO: "CRYPTO",
+  ETF: "ETF",
+  MUTUAL_FUND: "MUTUAL_FUND",
+  BOND: "BOND",
+} as const;
+export type AssetType = (typeof AssetType)[keyof typeof AssetType];
+
+export const TransactionType = {
+  BUY: "BUY",
+  SELL: "SELL",
+  DIVIDEND: "DIVIDEND",
+} as const;
+export type TransactionType = (typeof TransactionType)[keyof typeof TransactionType];
 
 export interface UserProfile {
   id: string;

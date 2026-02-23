@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo, useTransition } from "react";
+import { useState, useMemo, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -22,10 +23,12 @@ import {
 import { AddTransactionDialog } from "./add-transaction-dialog";
 import { formatCurrency, formatDate } from "@/utils/format";
 import type { AssetOption, EnrichedTransaction } from "@/types";
-import { Download, Plus, RefreshCw, ArrowLeftRight } from "lucide-react";
+import { Download, Plus, RefreshCw, ArrowLeftRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
+
+const PAGE_SIZE = 25;
 
 const TYPE_BADGE: Record<string, string> = {
   BUY: "bg-green-100 text-green-700",
@@ -120,6 +123,19 @@ export function TransactionsTable({ initialTransactions, assetOptions, currency 
       return true;
     });
   }, [initialTransactions, typeFilter, assetFilter, dateFrom, dateTo]);
+
+  // ── Pagination ──────────────────────────────────────────────────────────
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = useMemo(
+    () => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filtered, page]
+  );
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [typeFilter, assetFilter, dateFrom, dateTo]);
 
   const hasFilters =
     dateFrom || dateTo || assetFilter !== "all" || typeFilter !== "all";
@@ -228,9 +244,9 @@ export function TransactionsTable({ initialTransactions, assetOptions, currency 
       {assetOptions.length === 0 && (
         <p className="text-sm text-muted-foreground rounded-md border px-4 py-3">
           You need to add assets before recording transactions. Visit the{" "}
-          <a href="/dashboard/assets" className="underline underline-offset-4">
+          <Link href="/dashboard/assets" className="underline underline-offset-4">
             Assets
-          </a>{" "}
+          </Link>{" "}
           page first.
         </p>
       )}
@@ -247,86 +263,117 @@ export function TransactionsTable({ initialTransactions, assetOptions, currency 
           }
         />
       ) : (
-        <div className="rounded-md border overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Asset</TableHead>
-                <TableHead className="hidden sm:table-cell">Portfolio</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="hidden sm:table-cell text-right">Quantity</TableHead>
-                <TableHead className="hidden sm:table-cell text-right">Price / Unit</TableHead>
-                <TableHead className="hidden sm:table-cell text-right">Fees</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-                <TableHead className="hidden md:table-cell">Notes</TableHead>
-              </TableRow>
-            </TableHeader>
-
-            <TableBody>
-              {filtered.map((t) => (
-                <TableRow key={t.id}>
-                  <TableCell className="whitespace-nowrap text-sm tabular-nums">
-                    {formatDate(t.date)}
-                  </TableCell>
-
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-mono font-semibold text-sm">
-                        {t.assetSymbol}
-                      </span>
-                      <span className="text-xs text-muted-foreground truncate max-w-[140px]">
-                        {t.assetName}
-                      </span>
-                    </div>
-                  </TableCell>
-
-                  <TableCell className="hidden sm:table-cell text-sm text-muted-foreground whitespace-nowrap">
-                    {t.portfolioName}
-                  </TableCell>
-
-                  <TableCell>
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${TYPE_BADGE[t.type] ?? "bg-muted text-muted-foreground"}`}
-                    >
-                      {TYPE_LABELS[t.type] ?? t.type}
-                    </span>
-                  </TableCell>
-
-                  <TableCell className="hidden sm:table-cell text-right tabular-nums">
-                    {t.quantity}
-                  </TableCell>
-
-                  <TableCell className="hidden sm:table-cell text-right tabular-nums whitespace-nowrap">
-                    {formatCurrency(t.pricePerUnit, currency)}
-                  </TableCell>
-
-                  <TableCell className="hidden sm:table-cell text-right tabular-nums whitespace-nowrap">
-                    {t.fees > 0 ? (
-                      formatCurrency(t.fees, currency)
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-
-                  <TableCell className="text-right tabular-nums font-medium whitespace-nowrap">
-                    {formatCurrency(t.total, currency)}
-                  </TableCell>
-
-                  <TableCell className="hidden md:table-cell text-sm text-muted-foreground max-w-[180px]">
-                    {t.notes ? (
-                      <span className="block truncate" title={t.notes}>
-                        {t.notes}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground/40">—</span>
-                    )}
-                  </TableCell>
+        <>
+          <div className="rounded-md border overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Asset</TableHead>
+                  <TableHead className="hidden sm:table-cell">Portfolio</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead className="hidden sm:table-cell text-right">Quantity</TableHead>
+                  <TableHead className="hidden sm:table-cell text-right">Price / Unit</TableHead>
+                  <TableHead className="hidden sm:table-cell text-right">Fees</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead className="hidden md:table-cell">Notes</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+
+              <TableBody>
+                {paginated.map((t) => (
+                  <TableRow key={t.id}>
+                    <TableCell className="whitespace-nowrap text-sm tabular-nums">
+                      {formatDate(t.date)}
+                    </TableCell>
+
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-mono font-semibold text-sm">
+                          {t.assetSymbol}
+                        </span>
+                        <span className="text-xs text-muted-foreground truncate max-w-[140px]">
+                          {t.assetName}
+                        </span>
+                      </div>
+                    </TableCell>
+
+                    <TableCell className="hidden sm:table-cell text-sm text-muted-foreground whitespace-nowrap">
+                      {t.portfolioName}
+                    </TableCell>
+
+                    <TableCell>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${TYPE_BADGE[t.type] ?? "bg-muted text-muted-foreground"}`}
+                      >
+                        {TYPE_LABELS[t.type] ?? t.type}
+                      </span>
+                    </TableCell>
+
+                    <TableCell className="hidden sm:table-cell text-right tabular-nums">
+                      {t.quantity}
+                    </TableCell>
+
+                    <TableCell className="hidden sm:table-cell text-right tabular-nums whitespace-nowrap">
+                      {formatCurrency(t.pricePerUnit, currency)}
+                    </TableCell>
+
+                    <TableCell className="hidden sm:table-cell text-right tabular-nums whitespace-nowrap">
+                      {t.fees > 0 ? (
+                        formatCurrency(t.fees, currency)
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+
+                    <TableCell className="text-right tabular-nums font-medium whitespace-nowrap">
+                      {formatCurrency(t.total, currency)}
+                    </TableCell>
+
+                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground max-w-[180px]">
+                      {t.notes ? (
+                        <span className="block truncate" title={t.notes}>
+                          {t.notes}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground/40">—</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Pagination controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Page {page} of {totalPages}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Add dialog */}

@@ -51,7 +51,7 @@ export function AddWatchlistDialog({ open, onOpenChange, onSuccess }: Props) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -69,7 +69,7 @@ export function AddWatchlistDialog({ open, onOpenChange, onSuccess }: Props) {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       set("symbol", value);
-      clearTimeout(timerRef.current);
+      if (timerRef.current) clearTimeout(timerRef.current);
       if (!value.trim()) {
         setResults([]);
         setDropdownOpen(false);

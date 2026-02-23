@@ -3,6 +3,15 @@ import { auth } from "@/lib/auth";
 import { Resend } from "resend";
 import { rateLimit } from "@/lib/rate-limit";
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -38,10 +47,10 @@ export async function POST(req: NextRequest) {
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px 24px">
           <h2 style="margin:0 0 16px;font-size:18px;color:#111">New support request</h2>
           <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
-            <tr><td style="padding:6px 0;color:#555;font-size:13px;width:100px">From</td><td style="padding:6px 0;font-size:13px">${session.user.name} &lt;${session.user.email}&gt;</td></tr>
-            <tr><td style="padding:6px 0;color:#555;font-size:13px">Subject</td><td style="padding:6px 0;font-size:13px">${subject.trim()}</td></tr>
+            <tr><td style="padding:6px 0;color:#555;font-size:13px;width:100px">From</td><td style="padding:6px 0;font-size:13px">${escapeHtml(session.user.name ?? "")} &lt;${escapeHtml(session.user.email ?? "")}&gt;</td></tr>
+            <tr><td style="padding:6px 0;color:#555;font-size:13px">Subject</td><td style="padding:6px 0;font-size:13px">${escapeHtml(subject.trim())}</td></tr>
           </table>
-          <div style="background:#f4f4f5;border-radius:8px;padding:16px;font-size:14px;color:#111;white-space:pre-wrap">${message.trim()}</div>
+          <div style="background:#f4f4f5;border-radius:8px;padding:16px;font-size:14px;color:#111;white-space:pre-wrap">${escapeHtml(message.trim())}</div>
         </div>
       `,
     });

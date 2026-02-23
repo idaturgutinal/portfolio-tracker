@@ -1,12 +1,13 @@
 import { Resend } from "resend";
+import { env } from "@/lib/env";
 
-const FROM = process.env.EMAIL_FROM ?? "Portfolio Tracker <onboarding@resend.dev>";
+const FROM = env.EMAIL_FROM;
 
 export async function sendVerificationEmail(
   to: string,
   code: string
 ): Promise<void> {
-  const resend = new Resend(process.env.RESEND_API_KEY);
+  const resend = new Resend(env.RESEND_API_KEY);
   const { error } = await resend.emails.send({
     from: FROM,
     to,
@@ -38,7 +39,7 @@ export async function sendPasswordResetEmail(
   to: string,
   resetUrl: string
 ): Promise<void> {
-  const resend = new Resend(process.env.RESEND_API_KEY);
+  const resend = new Resend(env.RESEND_API_KEY);
   const { error } = await resend.emails.send({
     from: FROM,
     to,
