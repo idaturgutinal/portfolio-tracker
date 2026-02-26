@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 type OrderSide = "Buy" | "Sell";
 type OrderType = "Market" | "Limit" | "Stop-Limit";
@@ -9,10 +9,26 @@ interface OrderFormProps {
   baseAsset: string;
   quoteAsset: string;
   currentPrice: number;
+  side?: OrderSide;
+  onSideChange?: (side: OrderSide) => void;
 }
 
-export function OrderForm({ baseAsset, quoteAsset, currentPrice }: OrderFormProps) {
-  const [side, setSide] = useState<OrderSide>("Buy");
+export function OrderForm({ baseAsset, quoteAsset, currentPrice, side: controlledSide, onSideChange }: OrderFormProps) {
+  const [internalSide, setInternalSide] = useState<OrderSide>("Buy");
+  const side = controlledSide ?? internalSide;
+
+  const setSide = (newSide: OrderSide) => {
+    setInternalSide(newSide);
+    onSideChange?.(newSide);
+  };
+
+  // Sync internal state when controlled prop changes
+  useEffect(() => {
+    if (controlledSide) {
+      setInternalSide(controlledSide);
+    }
+  }, [controlledSide]);
+
   const [orderType, setOrderType] = useState<OrderType>("Limit");
   const [price, setPrice] = useState(currentPrice.toString());
   const [stopPrice, setStopPrice] = useState("");

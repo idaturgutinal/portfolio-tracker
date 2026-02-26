@@ -47,6 +47,7 @@ declare module "lucide-react" {
   export const Home: LucideIcon;
   export const Info: LucideIcon;
   export const Key: LucideIcon;
+  export const KeyRound: LucideIcon;
   export const LayoutDashboard: LucideIcon;
   export const LifeBuoy: LucideIcon;
   export const LineChart: LucideIcon;
@@ -61,6 +62,7 @@ declare module "lucide-react" {
   export const Pencil: LucideIcon;
   export const PieChart: LucideIcon;
   export const Plus: LucideIcon;
+  export const Power: LucideIcon;
   export const RefreshCcw: LucideIcon;
   export const RefreshCw: LucideIcon;
   export const Rocket: LucideIcon;

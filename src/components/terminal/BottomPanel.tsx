@@ -7,10 +7,15 @@ import {
   MOCK_TRADE_HISTORY,
   MOCK_BALANCES,
 } from "./mock-data";
+import { PriceAlerts } from "./PriceAlerts";
 
-type Tab = "openOrders" | "orderHistory" | "tradeHistory" | "balances";
+type Tab = "openOrders" | "orderHistory" | "tradeHistory" | "balances" | "alerts";
 
-export function BottomPanel() {
+interface BottomPanelProps {
+  currentSymbol?: string;
+}
+
+export function BottomPanel({ currentSymbol = "BTCUSDT" }: BottomPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>("openOrders");
   const [hideZero, setHideZero] = useState(false);
 
@@ -19,6 +24,7 @@ export function BottomPanel() {
     { key: "orderHistory", label: "Order History" },
     { key: "tradeHistory", label: "Trade History" },
     { key: "balances", label: "Balances" },
+    { key: "alerts", label: "Alerts" },
   ];
 
   const totalPortfolioValue = MOCK_BALANCES.reduce((sum, b) => sum + b.usdtValue, 0);
@@ -187,6 +193,10 @@ export function BottomPanel() {
               </tbody>
             </table>
           </div>
+        )}
+
+        {activeTab === "alerts" && (
+          <PriceAlerts currentSymbol={currentSymbol} />
         )}
       </div>
     </div>
