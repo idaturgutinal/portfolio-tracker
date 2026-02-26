@@ -156,13 +156,20 @@ async function avQuote(symbol: string): Promise<PriceQuote> {
   const q = json["Global Quote"] as Record<string, string> | undefined;
   if (!q?.["05. price"]) throw new Error("Invalid Alpha Vantage quote response");
 
+  const price = parseFloat(q["05. price"]);
+  if (!isFinite(price)) throw new Error("Invalid price data from Alpha Vantage");
+
+  const change = parseFloat(q["09. change"] ?? "0");
+  const changePercent = parseFloat((q["10. change percent"] ?? "0%").replace("%", "")) / 100;
+  const volume = parseInt(q["06. volume"] ?? "0", 10);
+
   return {
     symbol: q["01. symbol"],
-    price: parseFloat(q["05. price"]),
+    price,
     currency: "USD",
-    change: parseFloat(q["09. change"] ?? "0"),
-    changePercent: parseFloat((q["10. change percent"] ?? "0%").replace("%", "")) / 100,
-    volume: parseInt(q["06. volume"] ?? "0", 10),
+    change: isFinite(change) ? change : 0,
+    changePercent: isFinite(changePercent) ? changePercent : 0,
+    volume: isFinite(volume) ? volume : 0,
     timestamp: Math.floor(Date.now() / 1000),
   };
 }
@@ -363,6 +370,6 @@ export function toMarketSymbol(symbol: string, assetType: string): string {
 export async function getFXRate(targetCurrency: string): Promise<number> {
   if (targetCurrency === "USD") return 1;
   const result = await getQuote(`${targetCurrency}USD=X`);
-  if (!result.data || result.data.price === 0) return 1;
+  if (!result.data || result.data.price <= 0 || !isFinite(result.data.price)) return 1;
   return 1 / result.data.price;
 }

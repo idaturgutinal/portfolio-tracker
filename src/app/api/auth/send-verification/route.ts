@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   if (!rl.allowed) {
     return NextResponse.json(
       { error: "Too many requests. Please try again later." },
-      { status: 429 }
+      { status: 429, headers: { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
     );
   }
 

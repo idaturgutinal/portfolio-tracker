@@ -93,7 +93,9 @@ export async function getDashboardData(
   const assetMetrics: AssetMetric[] = [...groupMap.values()].map((group) => {
     const totalQty = group.reduce((s, a) => s + a.quantity, 0);
     const weightedAvgBuy =
-      group.reduce((s, a) => s + a.averageBuyPrice * a.quantity, 0) / totalQty;
+      totalQty > 0
+        ? group.reduce((s, a) => s + a.averageBuyPrice * a.quantity, 0) / totalQty
+        : 0;
 
     const yahooSym = toMarketSymbol(group[0].symbol, group[0].assetType);
     const quote = quotes.get(yahooSym);

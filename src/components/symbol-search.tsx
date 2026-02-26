@@ -14,6 +14,7 @@ export function SymbolSearch() {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
@@ -41,13 +42,22 @@ export function SymbolSearch() {
       }
 
       timerRef.current = setTimeout(async () => {
-        const res = await fetch(
-          `/api/market/search?q=${encodeURIComponent(value)}`
-        );
-        if (res.ok) {
-          const data = (await res.json()) as SymbolSearchResult[];
-          setResults(data);
-          setOpen(data.length > 0);
+        // Abort any in-flight request to prevent stale results
+        if (abortRef.current) abortRef.current.abort();
+        const controller = new AbortController();
+        abortRef.current = controller;
+        try {
+          const res = await fetch(
+            `/api/market/search?q=${encodeURIComponent(value)}`,
+            { signal: controller.signal }
+          );
+          if (res.ok) {
+            const data = (await res.json()) as SymbolSearchResult[];
+            setResults(data);
+            setOpen(data.length > 0);
+          }
+        } catch (err) {
+          if (err instanceof DOMException && err.name === "AbortError") return;
         }
       }, 350);
     },

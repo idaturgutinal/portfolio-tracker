@@ -28,7 +28,7 @@ export default async function DashboardPage() {
       <PageHeader
         icon={LayoutDashboard}
         title="Dashboard"
-        description={`Welcome back, ${session.user.name}.`}
+        description={`Welcome back, ${session.user.name ?? "User"}.`}
       />
 
       <SummaryCards

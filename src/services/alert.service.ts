@@ -48,7 +48,11 @@ export async function checkAndFireAlerts(userId: string): Promise<TriggeredAlert
 
   if (activeAlerts.length === 0) return [];
 
-  const marketSymbols = activeAlerts.map((a) =>
+  // Filter out alerts whose asset relationship may be broken
+  const validAlerts = activeAlerts.filter((a) => a.asset != null);
+  if (validAlerts.length === 0) return [];
+
+  const marketSymbols = validAlerts.map((a) =>
     toMarketSymbol(a.symbol, a.asset.assetType)
   );
   const quotes = await getBatchQuotes(marketSymbols);
@@ -56,7 +60,7 @@ export async function checkAndFireAlerts(userId: string): Promise<TriggeredAlert
   const triggered: TriggeredAlert[] = [];
   const now = new Date();
 
-  for (const alert of activeAlerts) {
+  for (const alert of validAlerts) {
     const marketSym = toMarketSymbol(alert.symbol, alert.asset.assetType);
     const quote = quotes.get(marketSym);
     if (!quote) continue;

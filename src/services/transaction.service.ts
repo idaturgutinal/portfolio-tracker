@@ -45,19 +45,30 @@ async function syncAssetAfterTransaction(
 ) {
   if (input.type === "DIVIDEND") return;
 
-  const asset = await prisma.asset.findUniqueOrThrow({ where: { id: assetId } });
+  const asset = await prisma.asset.findUnique({ where: { id: assetId } });
+  if (!asset) {
+    throw new Error(`Asset not found: ${assetId}`);
+  }
 
   if (input.type === "BUY") {
+    if (input.quantity <= 0) {
+      throw new Error("Buy quantity must be positive.");
+    }
     const newQuantity = asset.quantity + input.quantity;
     const newAverage =
-      (asset.quantity * asset.averageBuyPrice + input.quantity * input.pricePerUnit) /
-      newQuantity;
+      newQuantity > 0
+        ? (asset.quantity * asset.averageBuyPrice + input.quantity * input.pricePerUnit) /
+          newQuantity
+        : 0;
 
     await prisma.asset.update({
       where: { id: assetId },
       data: { quantity: newQuantity, averageBuyPrice: newAverage },
     });
   } else if (input.type === "SELL") {
+    if (input.quantity <= 0) {
+      throw new Error("Sell quantity must be positive.");
+    }
     if (asset.quantity < input.quantity) {
       throw new Error(
         `Insufficient quantity: cannot sell ${input.quantity}, only ${asset.quantity} held.`
