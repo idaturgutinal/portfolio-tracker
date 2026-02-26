@@ -1,10 +1,11 @@
-import { PieChart, Shield, BarChart2 } from "lucide-react";
+import { Globe, SquareTerminal, BarChart2, Shield } from "lucide-react";
 import { FolioVaultLogo } from "@/components/folio-vault-logo";
 
 const HIGHLIGHTS = [
-  { icon: PieChart, text: "Multi-asset portfolio tracking" },
+  { icon: Globe, text: "Multi-currency portfolio tracking" },
+  { icon: SquareTerminal, text: "Built-in Binance trading terminal" },
   { icon: BarChart2, text: "Real-time analytics & charts" },
-  { icon: Shield, text: "Secure & private by default" },
+  { icon: Shield, text: "Encrypted API keys & secure auth" },
 ];
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -19,8 +20,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           </div>
 
           <p className="text-lg font-medium leading-relaxed opacity-90">
-            Your investments, one clear view. Track, analyse, and stay on top of
-            every asset in your portfolio.
+            Track, analyze &amp; trade — all from one dashboard.
           </p>
 
           <ul className="space-y-3 pt-2">
