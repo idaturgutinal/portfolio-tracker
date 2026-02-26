@@ -1,6 +1,6 @@
 # FolioVault — Portfolio Tracker
 
-A full-stack investment portfolio tracker built with Next.js 15, Prisma, and shadcn/ui. Track stocks, crypto, ETFs, bonds, and mutual funds with real-time market data, analytics, price alerts, and more.
+A full-stack investment portfolio tracker built with Next.js 15, Prisma, and shadcn/ui. Track stocks, crypto, ETFs, bonds, and mutual funds with real-time market data, analytics, price alerts, and a built-in Binance trading terminal.
 
 **Live:** [foliovault.app](https://foliovault.app)
 
@@ -9,22 +9,26 @@ A full-stack investment portfolio tracker built with Next.js 15, Prisma, and sha
 ## Features
 
 - **Multi-asset tracking** — Stocks, Crypto, ETFs, Mutual Funds, Bonds
+- **Multi-currency support** — Each asset tracked in its native currency (USD, TRY, EUR, GBP, JPY, etc.) with automatic currency detection from exchange; all values converted to your display currency via live FX rates
+- **Binance Trading Terminal** — Connect your Binance API keys to view real-time balances, place market/limit orders, and view order & trade history directly from FolioVault
 - **Live market prices** — Yahoo Finance (primary) with Alpha Vantage fallback; 5-minute cache
-- **P&L calculations** — Per-asset and portfolio-level gain/loss
+- **P&L calculations** — Per-asset and portfolio-level gain/loss with proper cross-currency conversion
 - **Analytics dashboard** — Performance charts, allocation breakdown, P&L bar charts, top movers
 - **TradingView charts** — Interactive price charts per asset
-- **Price alerts** — Get notified when an asset crosses a target price (above/below)
+- **Price alerts** — Get notified when an asset crosses a target price (above/below); works for both portfolio assets and Binance trading pairs
 - **Watchlist** — Track symbols you're interested in with live price updates
 - **Transaction log** — Record buys, sells, and dividends with full history
+- **Dividend tracking** — Track dividend income with charts and per-asset breakdown
 - **Data export** — Export holdings and transactions as CSV or full JSON snapshot
 - **Onboarding guide** — Step-by-step walkthrough for new users
+- **Legal consent system** — Versioned legal document approval; users must re-accept when terms update
 - **Support form** — In-app feedback and support contact
 - **Responsive UI** — Sidebar (desktop) + hamburger drawer (mobile); paginated tables
 - **Authentication** — Email/password + Google OAuth via NextAuth.js (JWT sessions)
 - **Forgot password** — Email-based password reset flow via Resend
 - **Email verification** — Verify email address on signup
-- **Security** — Rate limiting, security headers, XSS protection, bcrypt password hashing
-- **Settings** — Profile, password, currency preference, data export, account deletion
+- **Security** — Rate limiting, security headers, XSS protection, bcrypt password hashing, encrypted API key storage
+- **Settings** — Profile, password, currency preference, Binance API keys, data export, account deletion
 
 ---
 
@@ -36,10 +40,13 @@ A full-stack investment portfolio tracker built with Next.js 15, Prisma, and sha
 | Language | TypeScript |
 | Styling | Tailwind CSS + shadcn/ui |
 | Database ORM | Prisma 5 (LibSQL adapter) |
+| Database (prod) | Turso (LibSQL) |
 | Database (dev) | SQLite |
 | Auth | NextAuth.js v5 (Credentials + Google OAuth) |
 | Charts | Recharts + TradingView widget |
 | Market Data | Yahoo Finance API + Alpha Vantage |
+| Trading | Binance API (via Hetzner proxy for static IP) |
+| FX Rates | Yahoo Finance currency pairs |
 | Email | Resend |
 | Deployment | Vercel |
 
@@ -104,12 +111,14 @@ Visit [http://localhost:3000](http://localhost:3000) — you'll be redirected to
 |---|---|---|
 | `DATABASE_URL` | Yes | Prisma connection string. `file:./dev.db` for SQLite |
 | `AUTH_SECRET` | Yes | Random secret for signing JWT tokens. Generate with `openssl rand -base64 32` |
+| `ENCRYPTION_KEY` | Yes | 32-byte hex key for encrypting Binance API keys at rest |
 | `NEXTAUTH_URL` | Prod only | Your app's public URL (e.g. `https://foliovault.app`) |
 | `GOOGLE_CLIENT_ID` | No | Google OAuth client ID |
 | `GOOGLE_CLIENT_SECRET` | No | Google OAuth client secret |
 | `RESEND_API_KEY` | No | Resend API key for transactional emails (verification, password reset) |
 | `EMAIL_FROM` | No | Sender address for emails (default: `Portfolio Tracker <onboarding@resend.dev>`) |
 | `ALPHA_VANTAGE_API_KEY` | No | Optional Alpha Vantage API key as fallback data source |
+| `BINANCE_PROXY_URL` | No | URL of the Hetzner proxy for Binance API requests (static IP whitelisting) |
 
 ---
 
@@ -130,7 +139,7 @@ npm run db:studio     # Open Prisma Studio (browser-based DB GUI)
 src/
   app/                    # Next.js App Router
     (auth)/               # Login, signup, forgot/reset password
-    (legal)/              # Terms of Service, Privacy Policy
+    (legal)/              # Terms of Service, Privacy Policy, Disclaimer
     dashboard/            # Protected dashboard routes
       page.tsx            # Overview — summary cards, top movers, charts
       assets/             # Holdings management + asset detail view
@@ -138,7 +147,9 @@ src/
       alerts/             # Price alerts
       analytics/          # Performance & allocation analytics
       watchlist/          # Watchlist management
-      settings/           # Profile, security, preferences, export, danger zone
+      dividends/          # Dividend tracking and charts
+      terminal/           # Binance trading terminal
+      settings/           # Profile, security, preferences, API keys, export, danger zone
       support/            # Support/feedback form
       chart/[symbol]      # TradingView chart widget
     api/                  # API route handlers
@@ -148,8 +159,10 @@ src/
       alerts/             # Alert CRUD
       portfolios/         # Portfolio CRUD
       market/             # Price quotes, history, symbol search
-      user/               # Profile, password, export, delete
+      binance/            # Binance API proxy (account, orders, trades, market data)
+      user/               # Profile, password, API keys, export, delete
       watchlist/          # Watchlist CRUD
+      legal-consent/      # Legal document consent tracking
       support/            # Support form submission
   components/
     ui/                   # shadcn/ui primitives
@@ -159,9 +172,12 @@ src/
     alerts/               # Alert table + dialog + notifier
     analytics/            # Asset breakdown, P&L charts
     watchlist/            # Watchlist table + dialog
-    settings/             # Settings tabs (profile, security, preferences, export, danger zone)
+    dividends/            # Dividend tables and charts
+    terminal/             # Binance terminal (order form, order book, trade history)
+    settings/             # Settings tabs (profile, security, preferences, API keys, export, danger zone)
     onboarding/           # Onboarding dialog + user guide
     support/              # Support form
+    legal-consent-modal.tsx  # Mandatory legal consent overlay
     sidebar-nav.tsx       # Responsive sidebar/drawer nav
     symbol-search.tsx     # Ticker symbol search with autocomplete
     empty-state.tsx       # Reusable empty state component
@@ -171,7 +187,9 @@ src/
     prisma.ts             # Prisma client singleton
     env.ts                # Runtime environment variable validation
     email.ts              # Email delivery via Resend
+    crypto.ts             # AES-256-GCM encryption for API keys
     rate-limit.ts         # In-memory rate limiter
+    legal-version.ts      # Current legal document version string
     utils.ts              # cn() utility
   services/               # Server-side data access layer
     portfolio.service.ts
@@ -180,7 +198,7 @@ src/
     alert.service.ts
     watchlist.service.ts
     user.service.ts
-    marketData.ts         # Yahoo Finance + Alpha Vantage
+    marketData.ts         # Yahoo Finance + Alpha Vantage + FX rates
   hooks/                  # Client-side React hooks
     use-portfolio.ts
     use-theme.ts
@@ -199,9 +217,9 @@ prisma/
 
 | Model | Description |
 |---|---|
-| `User` | User account with name, email, password, currency preference |
+| `User` | User account with name, email, password, currency preference, encrypted Binance API keys, legal consent tracking |
 | `Portfolio` | Named portfolio belonging to a user |
-| `Asset` | Individual holding (symbol, quantity, avg buy price, type) |
+| `Asset` | Individual holding (symbol, quantity, avg buy price, type, currency) |
 | `Transaction` | Buy/sell/dividend record linked to an asset |
 | `PriceAlert` | Price threshold alert (above/below) |
 | `WatchlistItem` | Tracked symbol not in any portfolio |
@@ -239,10 +257,19 @@ All API routes require authentication (JWT session cookie) except auth endpoints
 | GET | `/api/market/quote?symbol=` | Get live price quote |
 | GET | `/api/market/history?symbol=&range=` | Get historical prices |
 | GET | `/api/market/search?q=` | Search ticker symbols |
+| GET | `/api/binance/account` | Binance account balances |
+| GET | `/api/binance/orders` | Open and recent orders |
+| POST | `/api/binance/order` | Place a new order |
+| DELETE | `/api/binance/order` | Cancel an order |
+| GET | `/api/binance/trades` | Recent trade history |
+| GET | `/api/binance/market/exchange-info` | Trading pair info |
 | PATCH | `/api/user/profile` | Update name/email/currency |
 | PATCH | `/api/user/password` | Change password (rate-limited) |
+| POST | `/api/user/api-keys` | Save encrypted Binance API keys |
+| DELETE | `/api/user/api-keys` | Delete Binance API keys |
 | GET | `/api/user/export?format=` | Export data (csv-assets, csv-transactions, json) |
 | DELETE | `/api/user/delete` | Delete account (rate-limited) |
+| POST | `/api/legal-consent` | Accept updated legal documents |
 | POST | `/api/support` | Send support message |
 
 ---
@@ -250,6 +277,7 @@ All API routes require authentication (JWT session cookie) except auth endpoints
 ## Security
 
 - Passwords hashed with bcrypt (12 rounds)
+- Binance API keys encrypted at rest with AES-256-GCM
 - Security headers middleware (X-Frame-Options, HSTS, X-Content-Type-Options, Referrer-Policy, Permissions-Policy)
 - Login rate limiting (5 attempts per email per 15 minutes)
 - Rate limiting on signup, password change, and account deletion
@@ -259,6 +287,20 @@ All API routes require authentication (JWT session cookie) except auth endpoints
 - Email addresses normalized to lowercase
 - Sell transactions validated against held quantity
 - Runtime environment variable validation
+- Binance API requests routed through static-IP proxy (Hetzner VPS)
+
+---
+
+## Architecture
+
+```
+User Browser
+    ↓
+Vercel (Next.js)
+    ├── Dashboard / Assets / Analytics → Yahoo Finance API (market data)
+    ├── Binance Terminal → Hetzner VPS Proxy → Binance API (trading)
+    └── Database → Turso (LibSQL, eu-west-1)
+```
 
 ---
 
@@ -270,8 +312,12 @@ All API routes require authentication (JWT session cookie) except auth endpoints
    | Name | Value |
    |---|---|
    | `DATABASE_URL` | Your database connection string |
+   | `TURSO_DATABASE_URL` | Turso LibSQL URL |
+   | `TURSO_AUTH_TOKEN` | Turso auth token |
    | `AUTH_SECRET` | A random secret (`openssl rand -base64 32`) |
+   | `ENCRYPTION_KEY` | 32-byte hex key for API key encryption |
    | `NEXTAUTH_URL` | Your app URL (e.g. `https://foliovault.app`) |
+   | `BINANCE_PROXY_URL` | Hetzner proxy URL for Binance API |
    | `GOOGLE_CLIENT_ID` | Google OAuth client ID (optional) |
    | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret (optional) |
    | `RESEND_API_KEY` | Resend API key for emails (optional) |
