@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { formatCurrency } from "@/utils/format";
 import type { AssetOption } from "@/types";
+import { TRANSACTION_TYPES, TRANSACTION_TYPE_LABELS } from "@/lib/constants";
 
 interface Props {
   open: boolean;
@@ -160,9 +161,9 @@ export function AddTransactionDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="BUY">Buy</SelectItem>
-                <SelectItem value="SELL">Sell</SelectItem>
-                <SelectItem value="DIVIDEND">Dividend</SelectItem>
+                {TRANSACTION_TYPES.map((t) => (
+                  <SelectItem key={t} value={t}>{TRANSACTION_TYPE_LABELS[t]}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

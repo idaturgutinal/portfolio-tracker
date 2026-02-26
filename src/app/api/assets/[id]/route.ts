@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getSessionUserId, unauthorizedResponse, badRequest, notFound, serverError } from "@/lib/api-utils";
 import { prisma } from "@/lib/prisma";
 import { updateAsset, deleteAsset } from "@/services/portfolio.service";
 import type { UpdateAssetInput } from "@/services/portfolio.service";
@@ -16,41 +16,39 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const userId = await getSessionUserId();
+  if (!userId) return unauthorizedResponse();
 
   try {
     const { id } = await params;
-    const existing = await assertOwner(id, session.user.id);
+    const existing = await assertOwner(id, userId);
     if (!existing) {
-      return NextResponse.json({ error: "Asset not found." }, { status: 404 });
+      return notFound("Asset not found.");
     }
 
     const body = (await req.json()) as UpdateAssetInput;
 
     // Validate optional fields that are present
     if (body.assetType !== undefined && !VALID_ASSET_TYPES.has(body.assetType)) {
-      return NextResponse.json({ error: "Invalid asset type." }, { status: 400 });
+      return badRequest("Invalid asset type.");
     }
     if (body.symbol !== undefined) {
       const s = body.symbol.trim();
       if (!s || s.length > 20) {
-        return NextResponse.json({ error: "Symbol must be 1–20 characters." }, { status: 400 });
+        return badRequest("Symbol must be 1–20 characters.");
       }
       body.symbol = s.toUpperCase();
     }
     if (body.name !== undefined) {
       const n = body.name.trim();
       if (!n || n.length > 200) {
-        return NextResponse.json({ error: "Name must be 1–200 characters." }, { status: 400 });
+        return badRequest("Name must be 1–200 characters.");
       }
       body.name = n;
     }
     if (body.quantity !== undefined) {
       if (typeof body.quantity !== "number" || !isFinite(body.quantity) || body.quantity <= 0) {
-        return NextResponse.json({ error: "Quantity must be a positive number." }, { status: 400 });
+        return badRequest("Quantity must be a positive number.");
       }
     }
     if (body.averageBuyPrice !== undefined) {
@@ -59,31 +57,25 @@ export async function PATCH(
         !isFinite(body.averageBuyPrice) ||
         body.averageBuyPrice <= 0
       ) {
-        return NextResponse.json(
-          { error: "Average buy price must be a positive number." },
-          { status: 400 }
-        );
+        return badRequest("Average buy price must be a positive number.");
       }
     }
     if (body.currency !== undefined) {
       body.currency = body.currency.trim().toUpperCase();
       if (!body.currency || body.currency.length > 10) {
-        return NextResponse.json({ error: "Invalid currency." }, { status: 400 });
+        return badRequest("Invalid currency.");
       }
     }
     if (body.notes !== undefined && body.notes !== null) {
       if (typeof body.notes === "string" && body.notes.length > 1000) {
-        return NextResponse.json(
-          { error: "Notes must be 1000 characters or fewer." },
-          { status: 400 }
-        );
+        return badRequest("Notes must be 1000 characters or fewer.");
       }
     }
 
     const asset = await updateAsset(id, body);
     return NextResponse.json(asset);
   } catch {
-    return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
+    return serverError();
   }
 }
 
@@ -91,21 +83,19 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const userId = await getSessionUserId();
+  if (!userId) return unauthorizedResponse();
 
   try {
     const { id } = await params;
-    const existing = await assertOwner(id, session.user.id);
+    const existing = await assertOwner(id, userId);
     if (!existing) {
-      return NextResponse.json({ error: "Asset not found." }, { status: 404 });
+      return notFound("Asset not found.");
     }
 
     await deleteAsset(id);
     return new NextResponse(null, { status: 204 });
   } catch {
-    return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
+    return serverError();
   }
 }

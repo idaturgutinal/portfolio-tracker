@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getSessionUserId, unauthorizedResponse, badRequest, serverError } from "@/lib/api-utils";
 import {
   getUserExportData,
   getUserAssetsFlat,
@@ -16,10 +16,8 @@ function esc(v: string | number | boolean | null | undefined): string {
 }
 
 export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const userId = await getSessionUserId();
+  if (!userId) return unauthorizedResponse();
 
   try {
     const rawFormat = req.nextUrl.searchParams.get("format");
@@ -28,14 +26,11 @@ export async function GET(req: NextRequest) {
       : null;
 
     if (!format) {
-      return NextResponse.json(
-        { error: "Invalid format. Use csv-assets, csv-transactions, or json." },
-        { status: 400 }
-      );
+      return badRequest("Invalid format. Use csv-assets, csv-transactions, or json.");
     }
 
     if (format === "csv-assets") {
-      const assets = await getUserAssetsFlat(session.user.id);
+      const assets = await getUserAssetsFlat(userId);
       const headers = [
         "Portfolio",
         "Symbol",
@@ -71,7 +66,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (format === "csv-transactions") {
-      const txs = await getUserTransactionsFlat(session.user.id);
+      const txs = await getUserTransactionsFlat(userId);
       const headers = [
         "Date",
         "Portfolio",
@@ -107,7 +102,7 @@ export async function GET(req: NextRequest) {
     }
 
     // json
-    const data = await getUserExportData(session.user.id);
+    const data = await getUserExportData(userId);
     const json = JSON.stringify(data, null, 2);
     return new NextResponse(json, {
       headers: {
@@ -117,6 +112,6 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch {
-    return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
+    return serverError();
   }
 }

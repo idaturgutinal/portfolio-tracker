@@ -2,22 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatPercent } from "@/utils/format";
-
-const TYPE_LABELS: Record<string, string> = {
-  STOCK: "Stock",
-  CRYPTO: "Crypto",
-  ETF: "ETF",
-  MUTUAL_FUND: "Mutual Fund",
-  BOND: "Bond",
-};
-
-const TYPE_BADGE: Record<string, string> = {
-  STOCK: "bg-blue-100 text-blue-700",
-  CRYPTO: "bg-orange-100 text-orange-700",
-  ETF: "bg-green-100 text-green-700",
-  MUTUAL_FUND: "bg-purple-100 text-purple-700",
-  BOND: "bg-gray-100 text-gray-600",
-};
+import { ASSET_TYPE_LABELS, ASSET_TYPE_BADGE } from "@/lib/constants";
 
 interface Props {
   symbol: string;
@@ -53,9 +38,9 @@ export function HoldingsSummaryCard({
         <CardTitle className="text-base flex items-center gap-2">
           Holdings Summary
           <span
-            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${TYPE_BADGE[assetType] ?? "bg-muted text-muted-foreground"}`}
+            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${ASSET_TYPE_BADGE[assetType] ?? "bg-muted text-muted-foreground"}`}
           >
-            {TYPE_LABELS[assetType] ?? assetType}
+            {ASSET_TYPE_LABELS[assetType] ?? assetType}
           </span>
         </CardTitle>
       </CardHeader>

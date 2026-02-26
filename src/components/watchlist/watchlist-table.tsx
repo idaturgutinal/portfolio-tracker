@@ -17,14 +17,7 @@ import { formatCurrency, formatPercent, formatDate } from "@/utils/format";
 import { Plus, RefreshCw, Eye, TrendingUp, TrendingDown } from "lucide-react";
 import type { WatchlistRow } from "@/types";
 import { EmptyState } from "@/components/empty-state";
-
-const ASSET_TYPE_LABELS: Record<string, string> = {
-  STOCK: "Stock",
-  CRYPTO: "Crypto",
-  ETF: "ETF",
-  MUTUAL_FUND: "Mutual Fund",
-  BOND: "Bond",
-};
+import { ASSET_TYPE_LABELS } from "@/lib/constants";
 
 interface Props {
   initialItems: WatchlistRow[];

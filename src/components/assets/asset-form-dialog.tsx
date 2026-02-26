@@ -20,14 +20,7 @@ import {
 } from "@/components/ui/select";
 import type { EnrichedAsset, PortfolioOption } from "@/types";
 import type { SymbolSearchResult } from "@/services/marketData";
-
-const ASSET_TYPES = [
-  { value: "STOCK", label: "Stock" },
-  { value: "CRYPTO", label: "Crypto" },
-  { value: "ETF", label: "ETF" },
-  { value: "MUTUAL_FUND", label: "Mutual Fund" },
-  { value: "BOND", label: "Bond" },
-];
+import { ASSET_TYPES, ASSET_TYPE_LABELS } from "@/lib/constants";
 
 type AddMode = { mode: "add"; portfolios: PortfolioOption[] };
 type EditMode = { mode: "edit"; asset: EnrichedAsset };
@@ -308,7 +301,7 @@ export function AssetFormDialog(props: Props) {
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {ASSET_TYPES.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  <SelectItem key={t} value={t}>{ASSET_TYPE_LABELS[t]}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

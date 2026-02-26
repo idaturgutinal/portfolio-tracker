@@ -23,24 +23,14 @@ import {
 import { AddTransactionDialog } from "./add-transaction-dialog";
 import { formatCurrency, formatDate } from "@/utils/format";
 import type { AssetOption, EnrichedTransaction } from "@/types";
-import { Download, Plus, RefreshCw, ArrowLeftRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { Download, Plus, RefreshCw, ArrowLeftRight } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
-
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const PAGE_SIZE = 25;
-
-const TYPE_BADGE: Record<string, string> = {
-  BUY: "bg-green-100 text-green-700",
-  SELL: "bg-red-100 text-red-700",
-  DIVIDEND: "bg-blue-100 text-blue-700",
-};
-
-const TYPE_LABELS: Record<string, string> = {
-  BUY: "Buy",
-  SELL: "Sell",
-  DIVIDEND: "Dividend",
-};
+import { PaginationControls } from "@/components/ui/pagination";
+import {
+  PAGE_SIZE,
+  TRANSACTION_TYPE_LABELS,
+  TRANSACTION_TYPE_BADGE,
+} from "@/lib/constants";
 
 // ── CSV export ────────────────────────────────────────────────────────────────
 
@@ -304,9 +294,9 @@ export function TransactionsTable({ initialTransactions, assetOptions, currency 
 
                     <TableCell>
                       <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${TYPE_BADGE[t.type] ?? "bg-muted text-muted-foreground"}`}
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${TRANSACTION_TYPE_BADGE[t.type] ?? "bg-muted text-muted-foreground"}`}
                       >
-                        {TYPE_LABELS[t.type] ?? t.type}
+                        {TRANSACTION_TYPE_LABELS[t.type] ?? t.type}
                       </span>
                     </TableCell>
 
@@ -346,33 +336,7 @@ export function TransactionsTable({ initialTransactions, assetOptions, currency 
           </div>
 
           {/* Pagination controls */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                Page {page} of {totalPages}
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1}
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" />
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages}
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              </div>
-            </div>
-          )}
+          <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
         </>
       )}
 

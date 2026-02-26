@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { badRequest, serverError } from "@/lib/api-utils";
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
@@ -21,19 +22,16 @@ export async function POST(req: NextRequest) {
     };
 
     if (typeof token !== "string" || !token.trim()) {
-      return NextResponse.json({ error: "Token is required." }, { status: 400 });
+      return badRequest("Token is required.");
     }
     if (typeof newPassword !== "string" || !newPassword) {
-      return NextResponse.json({ error: "New password is required." }, { status: 400 });
+      return badRequest("New password is required.");
     }
     if (newPassword.length < 8) {
-      return NextResponse.json(
-        { error: "Password must be at least 8 characters." },
-        { status: 400 }
-      );
+      return badRequest("Password must be at least 8 characters.");
     }
     if (newPassword.length > 128) {
-      return NextResponse.json({ error: "Password is too long." }, { status: 400 });
+      return badRequest("Password is too long.");
     }
 
     const resetRecord = await prisma.passwordReset.findUnique({
@@ -41,18 +39,12 @@ export async function POST(req: NextRequest) {
     });
 
     if (!resetRecord) {
-      return NextResponse.json(
-        { error: "Invalid or expired reset link." },
-        { status: 400 }
-      );
+      return badRequest("Invalid or expired reset link.");
     }
 
     if (new Date() > resetRecord.expiresAt) {
       await prisma.passwordReset.delete({ where: { id: resetRecord.id } });
-      return NextResponse.json(
-        { error: "This reset link has expired. Please request a new one." },
-        { status: 400 }
-      );
+      return badRequest("This reset link has expired. Please request a new one.");
     }
 
     const hash = await bcrypt.hash(newPassword, 12);
@@ -70,9 +62,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[reset-password]", err);
-    return NextResponse.json(
-      { error: "An unexpected error occurred." },
-      { status: 500 }
-    );
+    return serverError();
   }
 }
