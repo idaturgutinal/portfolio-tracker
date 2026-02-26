@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
       return badRequest("Symbol is required for order export");
     }
 
-    const client = createBinanceClient();
+    const client = await createBinanceClient(userId);
     const orders = await client.getAllOrders(symbol);
 
     const header = "Date,Pair,Type,Side,Price,Quantity,Status,Total";

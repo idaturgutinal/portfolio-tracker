@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const symbol = searchParams.get("symbol") ?? undefined;
 
-    const client = createBinanceClient();
+    const client = await createBinanceClient(userId);
     const orders = await client.getOpenOrders(symbol);
 
     return NextResponse.json(orders);

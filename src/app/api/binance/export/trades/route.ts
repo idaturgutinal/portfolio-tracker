@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
       return badRequest("Symbol is required for trade export");
     }
 
-    const client = createBinanceClient();
+    const client = await createBinanceClient(userId);
     const trades = await client.getMyTrades(symbol);
 
     const header = "Date,Pair,Side,Price,Quantity,Commission,Commission Asset,Total";

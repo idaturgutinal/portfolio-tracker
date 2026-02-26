@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
       return badRequest("Symbol is required for trade history");
     }
 
-    const client = createBinanceClient();
+    const client = await createBinanceClient(userId);
     const trades = await client.getMyTrades(
       symbol,
       limit ? parseInt(limit, 10) : undefined

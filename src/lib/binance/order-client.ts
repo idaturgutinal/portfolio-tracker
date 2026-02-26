@@ -339,20 +339,14 @@ export class BinanceOrderClient {
   }
 }
 
-// ── Helper to create client from env or params ───────────────────────────────
+// ── Helper to create client from DB-stored keys ──────────────────────────────
 
-export function getUserApiKey(): { apiKey: string; secretKey: string } {
-  const apiKey = process.env.BINANCE_API_KEY;
-  const secretKey = process.env.BINANCE_SECRET_KEY;
+import { getUserApiKeys } from "@/lib/binance/helpers";
 
-  if (!apiKey || !secretKey) {
-    throw new Error("Binance API credentials not configured");
+export async function createBinanceClient(userId: string): Promise<BinanceOrderClient> {
+  const keys = await getUserApiKeys(userId);
+  if (!keys) {
+    throw new Error("No Binance API keys configured. Please add your API keys in settings.");
   }
-
-  return { apiKey, secretKey };
-}
-
-export function createBinanceClient(): BinanceOrderClient {
-  const { apiKey, secretKey } = getUserApiKey();
-  return new BinanceOrderClient(apiKey, secretKey);
+  return new BinanceOrderClient(keys.apiKey, keys.secretKey);
 }
