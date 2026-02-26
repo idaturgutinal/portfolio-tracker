@@ -1,13 +1,14 @@
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUserId } from "@/lib/api-utils";
-import { getUserApiKeys } from "@/lib/binance/helpers";
+import { getUserApiKeys, getUserTradingApiKeys } from "@/lib/binance/helpers";
 import { checkUserRateLimit } from "@/lib/binance/rate-limiter";
 
 interface SignRequestBody {
   method: "GET" | "POST" | "DELETE";
   endpoint: string;
   params: Record<string, string>;
+  isTrading?: boolean;
 }
 
 export async function POST(request: NextRequest) {
@@ -26,13 +27,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body: SignRequestBody = await request.json();
-    const { method, endpoint, params } = body;
+    const { method, endpoint, params, isTrading } = body;
 
     if (!method || !endpoint) {
       return NextResponse.json({ error: "Missing method or endpoint" }, { status: 400 });
     }
 
-    const keys = await getUserApiKeys(userId);
+    const keys = isTrading
+      ? await getUserTradingApiKeys(userId)
+      : await getUserApiKeys(userId);
     if (!keys) {
       return NextResponse.json(
         { error: "No Binance API keys configured. Please add your API keys in settings." },

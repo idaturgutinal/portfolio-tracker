@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { usePlaceOrder } from "@/hooks/useBinanceOrders";
+import type { OrderType as BinanceOrderType } from "@/lib/binance/order-client";
 
 type OrderSide = "Buy" | "Sell";
 type OrderType = "Market" | "Limit" | "Stop-Limit";
@@ -33,6 +35,9 @@ export function OrderForm({ baseAsset, quoteAsset, currentPrice, side: controlle
   const [price, setPrice] = useState(currentPrice.toString());
   const [stopPrice, setStopPrice] = useState("");
   const [amount, setAmount] = useState("");
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const { isLoading: orderLoading, error: orderError, placeOrder } = usePlaceOrder();
 
   const mockBalance = side === "Buy" ? 10000 : 0.5;
   const balanceAsset = side === "Buy" ? quoteAsset : baseAsset;
@@ -56,7 +61,8 @@ export function OrderForm({ baseAsset, quoteAsset, currentPrice, side: controlle
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    setSuccessMsg(null);
     if (!amount || parseFloat(amount) <= 0) {
       alert("Please enter a valid amount");
       return;
@@ -69,15 +75,27 @@ export function OrderForm({ baseAsset, quoteAsset, currentPrice, side: controlle
       alert("Please enter a valid stop price");
       return;
     }
-    alert(
-      `${side} ${orderType} Order:\n` +
-      `${baseAsset}/${quoteAsset}\n` +
-      (orderType !== "Market" ? `Price: ${price}\n` : "") +
-      (orderType === "Stop-Limit" ? `Stop: ${stopPrice}\n` : "") +
-      `Amount: ${amount} ${baseAsset}\n` +
-      `Total: ${total.toFixed(2)} ${quoteAsset}\n` +
-      `Fee: ~${fee.toFixed(2)} ${quoteAsset}`
-    );
+
+    const typeMap: Record<OrderType, BinanceOrderType> = {
+      "Market": "MARKET",
+      "Limit": "LIMIT",
+      "Stop-Limit": "STOP_LOSS_LIMIT",
+    };
+
+    const result = await placeOrder({
+      symbol: `${baseAsset}${quoteAsset}`,
+      side: side === "Buy" ? "BUY" : "SELL",
+      type: typeMap[orderType],
+      quantity: amount,
+      price: orderType !== "Market" ? price : undefined,
+      stopPrice: orderType === "Stop-Limit" ? stopPrice : undefined,
+    });
+
+    if (result) {
+      setSuccessMsg(`${side} order placed! ID: ${result.orderId}`);
+      setAmount("");
+      setTimeout(() => setSuccessMsg(null), 5000);
+    }
   };
 
   return (
@@ -204,16 +222,31 @@ export function OrderForm({ baseAsset, quoteAsset, currentPrice, side: controlle
           <span className="font-mono text-gray-400">~{fee.toFixed(2)} {quoteAsset}</span>
         </div>
 
+        {/* Status messages */}
+        {orderError && (
+          <div className="text-xs text-red-400 bg-red-500/10 rounded px-2 py-1.5 break-words">
+            {orderError}
+          </div>
+        )}
+        {successMsg && (
+          <div className="text-xs text-green-400 bg-green-500/10 rounded px-2 py-1.5">
+            {successMsg}
+          </div>
+        )}
+
         {/* Submit button */}
         <button
           onClick={handleSubmit}
+          disabled={orderLoading}
           className={`w-full py-2.5 rounded font-medium text-sm transition-colors ${
-            side === "Buy"
-              ? "bg-green-500 hover:bg-green-600 text-white"
-              : "bg-red-500 hover:bg-red-600 text-white"
+            orderLoading
+              ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+              : side === "Buy"
+                ? "bg-green-500 hover:bg-green-600 text-white"
+                : "bg-red-500 hover:bg-red-600 text-white"
           }`}
         >
-          {side} {baseAsset}
+          {orderLoading ? "Placing order..." : `${side} ${baseAsset}`}
         </button>
       </div>
     </div>

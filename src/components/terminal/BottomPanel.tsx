@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { PriceAlerts } from "./PriceAlerts";
 import { useBinanceBalances } from "@/hooks/useBinanceAccount";
-import { useOpenOrders, useOrderHistory, useTradeHistory } from "@/hooks/useBinanceOrders";
+import { useOpenOrders, useOrderHistory, useTradeHistory, useCancelOrder } from "@/hooks/useBinanceOrders";
 import type { TickerData } from "@/hooks/useBinanceMarket";
 
 type Tab = "openOrders" | "orderHistory" | "tradeHistory" | "balances" | "alerts";
@@ -68,10 +68,23 @@ export function BottomPanel({ currentSymbol = "BTCUSDT", tickers }: BottomPanelP
   const [activeTab, setActiveTab] = useState<Tab>("openOrders");
   const [hideZero, setHideZero] = useState(false);
 
+  const [cancellingId, setCancellingId] = useState<number | null>(null);
+
   const { balances, isLoading: balancesLoading, error: balancesError, hasApiKey: balancesHasApiKey } = useBinanceBalances(tickers);
-  const { orders: openOrders, isLoading: openLoading, error: openError, hasApiKey: openHasApiKey } = useOpenOrders();
+  const { orders: openOrders, isLoading: openLoading, error: openError, hasApiKey: openHasApiKey, refetch: refetchOpenOrders } = useOpenOrders();
   const { orders: historyOrders, isLoading: historyLoading, error: historyError, hasApiKey: historyHasApiKey } = useOrderHistory(currentSymbol);
   const { trades, isLoading: tradesLoading, error: tradesError, hasApiKey: tradesHasApiKey } = useTradeHistory(currentSymbol);
+  const { cancelOrder } = useCancelOrder();
+
+  const handleCancelOrder = async (symbol: string, orderId: number) => {
+    if (!confirm(`Cancel order #${orderId}?`)) return;
+    setCancellingId(orderId);
+    const success = await cancelOrder({ symbol, orderId });
+    setCancellingId(null);
+    if (success) {
+      refetchOpenOrders();
+    }
+  };
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "openOrders", label: "Open Orders" },
@@ -151,7 +164,17 @@ export function BottomPanel({ currentSymbol = "BTCUSDT", tickers }: BottomPanelP
                         <td className="px-3 py-2 text-right font-mono">{origQty}</td>
                         <td className="px-3 py-2 text-right font-mono">{filledPct}%</td>
                         <td className="px-3 py-2 text-center">
-                          <button disabled className="text-gray-600 text-xs cursor-not-allowed">Cancel</button>
+                          <button
+                            onClick={() => handleCancelOrder(order.symbol, order.orderId)}
+                            disabled={cancellingId === order.orderId}
+                            className={`text-xs transition-colors ${
+                              cancellingId === order.orderId
+                                ? "text-gray-500 cursor-not-allowed"
+                                : "text-red-400 hover:text-red-300 cursor-pointer"
+                            }`}
+                          >
+                            {cancellingId === order.orderId ? "Cancelling..." : "Cancel"}
+                          </button>
                         </td>
                       </tr>
                     );

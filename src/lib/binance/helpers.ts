@@ -36,3 +36,39 @@ export async function getUserApiKeys(userId: string): Promise<UserApiKeys | null
 
   return { apiKey, secretKey };
 }
+
+/**
+ * Retrieve the user's trading-enabled Binance API key.
+ * Selects the active key whose label does NOT contain "Read" (case-insensitive).
+ * If multiple match, picks the oldest (first created = trading key).
+ */
+export async function getUserTradingApiKeys(userId: string): Promise<UserApiKeys | null> {
+  const activeKeys = await prisma.binanceApiKey.findMany({
+    where: { userId, isActive: true },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      label: true,
+      encryptedApiKey: true,
+      encryptedSecret: true,
+    },
+  });
+
+  const tradingKey = activeKeys.find(
+    (k) => !k.label.toLowerCase().includes("read")
+  );
+
+  if (!tradingKey) {
+    return null;
+  }
+
+  await prisma.binanceApiKey.update({
+    where: { id: tradingKey.id },
+    data: { lastUsedAt: new Date() },
+  });
+
+  const apiKey = decrypt(tradingKey.encryptedApiKey);
+  const secretKey = decrypt(tradingKey.encryptedSecret);
+
+  return { apiKey, secretKey };
+}
