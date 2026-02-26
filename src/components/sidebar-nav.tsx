@@ -13,6 +13,7 @@ import {
   Eye,
   BarChart2,
   Bell,
+  DollarSign,
   Settings,
   LifeBuoy,
   LogOut,
@@ -27,6 +28,7 @@ const MAIN_NAV = [
   { href: "/dashboard/assets", label: "Assets", icon: Wallet },
   { href: "/dashboard/transactions", label: "Transactions", icon: ArrowLeftRight },
   { href: "/dashboard/watchlist", label: "Watchlist", icon: Eye },
+  { href: "/dashboard/dividends", label: "Dividends", icon: DollarSign },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart2 },
   { href: "/dashboard/alerts", label: "Alerts", icon: Bell },
 ];
