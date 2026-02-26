@@ -11,12 +11,6 @@ import type {
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-interface FetchState<T> {
-  data: T | null;
-  isLoading: boolean;
-  error: string | null;
-}
-
 interface MutationState {
   isLoading: boolean;
   error: string | null;
@@ -36,122 +30,214 @@ interface CancelOrderInput {
   orderId: number;
 }
 
+// ── Shared fetch helper ──────────────────────────────────────────────────────
+
+async function fetchBinanceApi<T>(
+  url: string,
+  signal: AbortSignal,
+  callbacks: {
+    onUnauthorized: () => void;
+    onError: (msg: string) => void;
+    onSuccess: (data: T) => void;
+  }
+) {
+  try {
+    const res = await fetch(url, { signal });
+
+    if (res.status === 401) {
+      callbacks.onUnauthorized();
+      return;
+    }
+
+    if (!res.ok) {
+      const body = (await res.json()) as { error?: string };
+      throw new Error(body.error ?? `HTTP ${res.status}`);
+    }
+
+    const data = (await res.json()) as T;
+    callbacks.onSuccess(data);
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === "AbortError") return;
+    callbacks.onError(err instanceof Error ? err.message : "Request failed");
+  }
+}
+
 // ── useOpenOrders ────────────────────────────────────────────────────────────
 
 export function useOpenOrders(symbol?: string) {
-  const [state, setState] = useState<FetchState<BinanceOpenOrder[]>>({
-    data: null,
-    isLoading: false,
-    error: null,
-  });
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [orders, setOrders] = useState<BinanceOpenOrder[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [hasApiKey, setHasApiKey] = useState(true);
+  const abortRef = useRef<AbortController | null>(null);
 
-  const fetchOrders = useCallback(async () => {
-    setState((prev) => ({ ...prev, isLoading: true, error: null }));
-    try {
+  const fetchOrders = useCallback(
+    async (signal: AbortSignal) => {
       const params = new URLSearchParams();
       if (symbol) params.set("symbol", symbol);
-      const res = await fetch(`/api/binance/orders/open?${params.toString()}`);
-      if (!res.ok) {
-        const body = (await res.json()) as { error?: string };
-        throw new Error(body.error ?? `HTTP ${res.status}`);
-      }
-      const data = (await res.json()) as BinanceOpenOrder[];
-      setState({ data, isLoading: false, error: null });
-    } catch (err) {
-      setState((prev) => ({
-        ...prev,
-        isLoading: false,
-        error: err instanceof Error ? err.message : "Failed to fetch open orders",
-      }));
-    }
-  }, [symbol]);
+      const qs = params.toString();
+      const url = `/api/binance/orders/open${qs ? `?${qs}` : ""}`;
+
+      await fetchBinanceApi<BinanceOpenOrder[]>(url, signal, {
+        onUnauthorized: () => {
+          setHasApiKey(false);
+          setOrders([]);
+          setError(null);
+          setIsLoading(false);
+        },
+        onError: (msg) => {
+          setError(msg);
+          setIsLoading(false);
+        },
+        onSuccess: (data) => {
+          setOrders(data);
+          setHasApiKey(true);
+          setError(null);
+          setIsLoading(false);
+        },
+      });
+    },
+    [symbol]
+  );
 
   useEffect(() => {
-    fetchOrders();
-    intervalRef.current = setInterval(fetchOrders, 30000);
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setIsLoading(true);
+    fetchOrders(controller.signal);
+
+    const interval = setInterval(() => {
+      if (!controller.signal.aborted) {
+        fetchOrders(controller.signal);
+      }
+    }, 15_000);
+
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      controller.abort();
+      clearInterval(interval);
     };
   }, [fetchOrders]);
 
-  return { ...state, refetch: fetchOrders };
+  return { orders, isLoading, error, hasApiKey };
 }
 
 // ── useOrderHistory ──────────────────────────────────────────────────────────
 
-export function useOrderHistory(symbol?: string, limit?: number) {
-  const [state, setState] = useState<FetchState<BinanceOpenOrder[]>>({
-    data: null,
-    isLoading: false,
-    error: null,
-  });
+export function useOrderHistory(symbol: string) {
+  const [orders, setOrders] = useState<BinanceOpenOrder[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [hasApiKey, setHasApiKey] = useState(true);
+  const abortRef = useRef<AbortController | null>(null);
 
-  const fetchHistory = useCallback(async () => {
-    if (!symbol) return;
-    setState((prev) => ({ ...prev, isLoading: true, error: null }));
-    try {
-      const params = new URLSearchParams({ symbol });
-      if (limit) params.set("limit", limit.toString());
-      const res = await fetch(`/api/binance/orders/history?${params.toString()}`);
-      if (!res.ok) {
-        const body = (await res.json()) as { error?: string };
-        throw new Error(body.error ?? `HTTP ${res.status}`);
-      }
-      const data = (await res.json()) as BinanceOpenOrder[];
-      setState({ data, isLoading: false, error: null });
-    } catch (err) {
-      setState((prev) => ({
-        ...prev,
-        isLoading: false,
-        error: err instanceof Error ? err.message : "Failed to fetch order history",
-      }));
-    }
-  }, [symbol, limit]);
+  const fetchHistory = useCallback(
+    async (signal: AbortSignal) => {
+      if (!symbol) return;
+
+      const url = `/api/binance/orders/history?symbol=${encodeURIComponent(symbol)}&limit=50`;
+
+      await fetchBinanceApi<BinanceOpenOrder[]>(url, signal, {
+        onUnauthorized: () => {
+          setHasApiKey(false);
+          setOrders([]);
+          setError(null);
+          setIsLoading(false);
+        },
+        onError: (msg) => {
+          setError(msg);
+          setIsLoading(false);
+        },
+        onSuccess: (data) => {
+          setOrders(data);
+          setHasApiKey(true);
+          setError(null);
+          setIsLoading(false);
+        },
+      });
+    },
+    [symbol]
+  );
 
   useEffect(() => {
-    fetchHistory();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setIsLoading(true);
+    fetchHistory(controller.signal);
+
+    const interval = setInterval(() => {
+      if (!controller.signal.aborted) {
+        fetchHistory(controller.signal);
+      }
+    }, 30_000);
+
+    return () => {
+      controller.abort();
+      clearInterval(interval);
+    };
   }, [fetchHistory]);
 
-  return { ...state, refetch: fetchHistory };
+  return { orders, isLoading, error, hasApiKey };
 }
 
 // ── useTradeHistory ──────────────────────────────────────────────────────────
 
-export function useTradeHistory(symbol?: string, limit?: number) {
-  const [state, setState] = useState<FetchState<BinanceTrade[]>>({
-    data: null,
-    isLoading: false,
-    error: null,
-  });
+export function useTradeHistory(symbol: string) {
+  const [trades, setTrades] = useState<BinanceTrade[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [hasApiKey, setHasApiKey] = useState(true);
+  const abortRef = useRef<AbortController | null>(null);
 
-  const fetchTrades = useCallback(async () => {
-    if (!symbol) return;
-    setState((prev) => ({ ...prev, isLoading: true, error: null }));
-    try {
-      const params = new URLSearchParams({ symbol });
-      if (limit) params.set("limit", limit.toString());
-      const res = await fetch(`/api/binance/trades/history?${params.toString()}`);
-      if (!res.ok) {
-        const body = (await res.json()) as { error?: string };
-        throw new Error(body.error ?? `HTTP ${res.status}`);
-      }
-      const data = (await res.json()) as BinanceTrade[];
-      setState({ data, isLoading: false, error: null });
-    } catch (err) {
-      setState((prev) => ({
-        ...prev,
-        isLoading: false,
-        error: err instanceof Error ? err.message : "Failed to fetch trade history",
-      }));
-    }
-  }, [symbol, limit]);
+  const fetchTrades = useCallback(
+    async (signal: AbortSignal) => {
+      if (!symbol) return;
+
+      const url = `/api/binance/trades/history?symbol=${encodeURIComponent(symbol)}&limit=50`;
+
+      await fetchBinanceApi<BinanceTrade[]>(url, signal, {
+        onUnauthorized: () => {
+          setHasApiKey(false);
+          setTrades([]);
+          setError(null);
+          setIsLoading(false);
+        },
+        onError: (msg) => {
+          setError(msg);
+          setIsLoading(false);
+        },
+        onSuccess: (data) => {
+          setTrades(data);
+          setHasApiKey(true);
+          setError(null);
+          setIsLoading(false);
+        },
+      });
+    },
+    [symbol]
+  );
 
   useEffect(() => {
-    fetchTrades();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setIsLoading(true);
+    fetchTrades(controller.signal);
+
+    const interval = setInterval(() => {
+      if (!controller.signal.aborted) {
+        fetchTrades(controller.signal);
+      }
+    }, 30_000);
+
+    return () => {
+      controller.abort();
+      clearInterval(interval);
+    };
   }, [fetchTrades]);
 
-  return { ...state, refetch: fetchTrades };
+  return { trades, isLoading, error, hasApiKey };
 }
 
 // ── usePlaceOrder ────────────────────────────────────────────────────────────
