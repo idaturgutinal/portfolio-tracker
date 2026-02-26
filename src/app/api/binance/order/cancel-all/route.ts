@@ -20,7 +20,7 @@ export async function DELETE(req: NextRequest) {
       return badRequest("Symbol is required");
     }
 
-    const client = await createBinanceClient(userId);
+    const client = await createBinanceClient(userId, true);
     const result = await client.cancelAllOrders(symbol);
 
     return NextResponse.json(result);

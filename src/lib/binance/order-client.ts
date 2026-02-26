@@ -341,12 +341,18 @@ export class BinanceOrderClient {
 
 // ── Helper to create client from DB-stored keys ──────────────────────────────
 
-import { getUserApiKeys } from "@/lib/binance/helpers";
+import { getUserApiKeys, getUserTradingApiKeys } from "@/lib/binance/helpers";
 
-export async function createBinanceClient(userId: string): Promise<BinanceOrderClient> {
-  const keys = await getUserApiKeys(userId);
+export async function createBinanceClient(userId: string, trading: boolean = false): Promise<BinanceOrderClient> {
+  const keys = trading
+    ? await getUserTradingApiKeys(userId)
+    : await getUserApiKeys(userId);
   if (!keys) {
-    throw new Error("No Binance API keys configured. Please add your API keys in settings.");
+    throw new Error(
+      trading
+        ? "No trading-enabled Binance API key found. Please add a trading API key in settings."
+        : "No Binance API keys configured. Please add your API keys in settings."
+    );
   }
   return new BinanceOrderClient(keys.apiKey, keys.secretKey);
 }

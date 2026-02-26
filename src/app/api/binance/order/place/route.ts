@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       if (!result.valid) return badRequest(result.error!);
     }
 
-    const client = await createBinanceClient(userId);
+    const client = await createBinanceClient(userId, true);
     const order = await client.placeOrder({
       symbol,
       side,

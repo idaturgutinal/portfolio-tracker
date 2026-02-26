@@ -24,7 +24,7 @@ export async function DELETE(req: NextRequest) {
       return badRequest("Valid orderId is required");
     }
 
-    const client = await createBinanceClient(userId);
+    const client = await createBinanceClient(userId, true);
     const result = await client.cancelOrder(symbol, orderId);
 
     return NextResponse.json(result);

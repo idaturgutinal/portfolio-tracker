@@ -246,32 +246,6 @@ export function useTradeHistory(symbol: string) {
   return { trades, isLoading, error, hasApiKey };
 }
 
-// ── Sign helper (server signs, client sends to Binance) ─────────────────────
-
-interface SignResponse {
-  apiKey: string;
-  signature: string;
-  timestamp: number;
-  queryString: string;
-}
-
-async function signRequest(
-  method: "GET" | "POST" | "DELETE",
-  endpoint: string,
-  params: Record<string, string>,
-): Promise<SignResponse> {
-  const res = await fetch("/api/binance/sign", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ method, endpoint, params, isTrading: true }),
-  });
-  if (!res.ok) {
-    const body = (await res.json()) as { error?: string };
-    throw new Error(body.error ?? `Sign request failed (HTTP ${res.status})`);
-  }
-  return (await res.json()) as SignResponse;
-}
-
 // ── usePlaceOrder ────────────────────────────────────────────────────────────
 
 export function usePlaceOrder() {
@@ -283,44 +257,20 @@ export function usePlaceOrder() {
   const placeOrder = useCallback(async (input: PlaceOrderInput): Promise<BinanceOrderResponse | null> => {
     setState({ isLoading: true, error: null });
     try {
-      // Build params for signing
-      const params: Record<string, string> = {
-        symbol: input.symbol,
-        side: input.side,
-        type: input.type,
-        quantity: input.quantity,
-      };
-      if ((input.type === "LIMIT" || input.type === "STOP_LOSS_LIMIT") && input.price) {
-        params.timeInForce = "GTC";
-        params.price = input.price;
-      }
-      if (input.type === "STOP_LOSS_LIMIT" && input.stopPrice) {
-        params.stopPrice = input.stopPrice;
-      }
-
-      // 1) Server-side signing
-      const signed = await signRequest("POST", "/api/v3/order", params);
-
-      // 2) Client-side POST to Binance
-      const binanceRes = await fetch("https://api.binance.com/api/v3/order", {
+      const res = await fetch("/api/binance/order/place", {
         method: "POST",
-        headers: {
-          "X-MBX-APIKEY": signed.apiKey,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: `${signed.queryString}&signature=${signed.signature}`,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
       });
 
-      const data = await binanceRes.json();
-
-      if (!binanceRes.ok) {
-        throw new Error(
-          `Binance error (${data.code ?? binanceRes.status}): ${data.msg ?? "Order failed"}`
-        );
+      if (!res.ok) {
+        const body = (await res.json()) as { error?: string };
+        throw new Error(body.error ?? `HTTP ${res.status}`);
       }
 
+      const data = (await res.json()) as BinanceOrderResponse;
       setState({ isLoading: false, error: null });
-      return data as BinanceOrderResponse;
+      return data;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to place order";
       setState({ isLoading: false, error: message });
@@ -342,27 +292,15 @@ export function useCancelOrder() {
   const cancelOrder = useCallback(async (input: CancelOrderInput): Promise<boolean> => {
     setState({ isLoading: true, error: null });
     try {
-      // 1) Server-side signing
-      const signed = await signRequest("DELETE", "/api/v3/order", {
-        symbol: input.symbol,
-        orderId: String(input.orderId),
+      const res = await fetch("/api/binance/order/cancel", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
       });
 
-      // 2) Client-side DELETE to Binance
-      const binanceRes = await fetch(
-        `https://api.binance.com/api/v3/order?${signed.queryString}&signature=${signed.signature}`,
-        {
-          method: "DELETE",
-          headers: { "X-MBX-APIKEY": signed.apiKey },
-        }
-      );
-
-      const data = await binanceRes.json();
-
-      if (!binanceRes.ok) {
-        throw new Error(
-          `Binance error (${data.code ?? binanceRes.status}): ${data.msg ?? "Cancel failed"}`
-        );
+      if (!res.ok) {
+        const body = (await res.json()) as { error?: string };
+        throw new Error(body.error ?? `HTTP ${res.status}`);
       }
 
       setState({ isLoading: false, error: null });

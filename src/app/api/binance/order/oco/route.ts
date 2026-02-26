@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     const validation = validateOcoOrder({ symbol, side, quantity, price, stopPrice, stopLimitPrice });
     if (!validation.valid) return badRequest(validation.error!);
 
-    const client = await createBinanceClient(userId);
+    const client = await createBinanceClient(userId, true);
     const order = await client.placeOcoOrder({
       symbol,
       side,
