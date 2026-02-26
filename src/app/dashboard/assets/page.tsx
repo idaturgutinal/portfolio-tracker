@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { getAssetsByUser, getPortfolios } from "@/services/portfolio.service";
-import { getBatchQuotes, getFXRate, toMarketSymbol } from "@/services/marketData";
+import { getBatchQuotes, getMultiFXRates, toMarketSymbol } from "@/services/marketData";
 import { AssetsTable } from "@/components/assets/assets-table";
 import type { EnrichedAsset, PortfolioOption } from "@/types";
 import { PageHeader } from "@/components/page-header";
@@ -21,18 +21,20 @@ export default async function AssetsPage() {
   ]);
 
   const symbols = dbAssets.map((a) => toMarketSymbol(a.symbol, a.assetType));
-  const [quotes, fxRate] = await Promise.all([
+  const uniqueCurrencies = [...new Set(dbAssets.map((a) => a.currency))];
+  const [quotes, fxRates] = await Promise.all([
     getBatchQuotes(symbols),
-    getFXRate(currency),
+    getMultiFXRates(uniqueCurrencies, currency),
   ]);
 
   const enrichedAssets: EnrichedAsset[] = dbAssets.map((a) => {
     const sym = toMarketSymbol(a.symbol, a.assetType);
     const quote = quotes.get(sym);
-    const currentPrice = quote ? quote.price * fxRate : null;
-    const effectivePrice = currentPrice ?? a.averageBuyPrice * fxRate;
-    const marketValue = a.quantity * effectivePrice;
-    const costBasis = a.quantity * a.averageBuyPrice * fxRate;
+    const assetFx = fxRates.get(a.currency) ?? 1;
+    const currentPrice = quote ? quote.price : null;
+    const effectivePrice = currentPrice ?? a.averageBuyPrice;
+    const marketValue = a.quantity * effectivePrice * assetFx;
+    const costBasis = a.quantity * a.averageBuyPrice * assetFx;
     return {
       id: a.id,
       ids: [a.id],
@@ -67,9 +69,10 @@ export default async function AssetsPage() {
     const weightedAvgBuy =
       group.reduce((s, a) => s + a.averageBuyPrice * a.quantity, 0) / totalQty;
     const currentPrice = group[0].currentPrice; // same quote for all in group
-    const effectivePrice = currentPrice ?? weightedAvgBuy * fxRate;
-    const marketValue = totalQty * effectivePrice;
-    const costBasis = totalQty * weightedAvgBuy * fxRate;
+    const assetFx = fxRates.get(group[0].currency) ?? 1;
+    const effectivePrice = currentPrice ?? weightedAvgBuy;
+    const marketValue = totalQty * effectivePrice * assetFx;
+    const costBasis = totalQty * weightedAvgBuy * assetFx;
 
     return {
       ...group[0],

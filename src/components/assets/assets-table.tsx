@@ -340,11 +340,11 @@ export function AssetsTable({ initialAssets, portfolios: initialPortfolios, curr
                     </TableCell>
                     <TableCell className="hidden sm:table-cell tabular-nums">{asset.quantity}</TableCell>
                     <TableCell className="hidden sm:table-cell tabular-nums whitespace-nowrap">
-                      {formatCurrency(asset.averageBuyPrice)}
+                      {formatCurrency(asset.averageBuyPrice, asset.currency)}
                     </TableCell>
                     <TableCell className="hidden md:table-cell tabular-nums whitespace-nowrap">
                       {asset.currentPrice != null ? (
-                        formatCurrency(asset.currentPrice, currency)
+                        formatCurrency(asset.currentPrice, asset.currency)
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
