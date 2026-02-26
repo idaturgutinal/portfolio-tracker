@@ -143,7 +143,7 @@ export default function TerminalPage() {
           {/* Bottom Panel */}
           {!chartFullscreen && (
             <div className="h-52 border-t border-gray-700 flex-shrink-0">
-              <BottomPanel currentSymbol={selectedPair.symbol} />
+              <BottomPanel currentSymbol={selectedPair.symbol} tickers={tickers} />
             </div>
           )}
         </div>

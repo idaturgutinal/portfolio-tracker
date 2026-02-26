@@ -1,7 +1,5 @@
-/**
- * Helper functions for Binance API integration.
- * Database operations are placeholder — will be connected after merge.
- */
+import { prisma } from "@/lib/prisma";
+import { decrypt } from "@/lib/encryption";
 
 interface UserApiKeys {
   apiKey: string;
@@ -9,32 +7,32 @@ interface UserApiKeys {
 }
 
 /**
- * Retrieve a user's active Binance API keys.
- *
- * PLACEHOLDER: Currently reads from environment variables.
- * After merge, this will query the database for the user's encrypted keys
- * and decrypt them.
- *
- * @param _userId - The user ID (unused in placeholder implementation)
+ * Retrieve a user's active Binance API keys from the database,
+ * decrypt them, and return as plaintext.
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function getUserApiKeys(userId: string): Promise<UserApiKeys | null> {
-  // TODO: After merge, use userId to query DB for encrypted keys and decrypt them
-  const apiKey = process.env.BINANCE_API_KEY;
-  const secretKey = process.env.BINANCE_SECRET_KEY;
+  const keyRecord = await prisma.binanceApiKey.findFirst({
+    where: { userId, isActive: true },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      encryptedApiKey: true,
+      encryptedSecret: true,
+    },
+  });
 
-  if (!apiKey || !secretKey) {
+  if (!keyRecord) {
     return null;
   }
 
-  return { apiKey, secretKey };
-}
+  // Update lastUsedAt
+  await prisma.binanceApiKey.update({
+    where: { id: keyRecord.id },
+    data: { lastUsedAt: new Date() },
+  });
 
-/**
- * Placeholder decrypt function.
- * After merge, this will use the actual decryption logic.
- */
-export function decryptApiKey(encryptedKey: string): string {
-  // TODO: Implement actual decryption after merge
-  return encryptedKey;
+  const apiKey = decrypt(keyRecord.encryptedApiKey);
+  const secretKey = decrypt(keyRecord.encryptedSecret);
+
+  return { apiKey, secretKey };
 }

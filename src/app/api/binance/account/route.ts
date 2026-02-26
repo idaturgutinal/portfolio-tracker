@@ -30,7 +30,20 @@ export async function GET() {
     const client = new BinanceClient({ apiKey: keys.apiKey, secretKey: keys.secretKey });
     const data = await client.getAccountInfo();
 
-    return NextResponse.json(data);
+    // Filter out zero balances
+    const nonZeroBalances = data.balances.filter((b) => {
+      const free = parseFloat(b.free);
+      const locked = parseFloat(b.locked);
+      return free > 0 || locked > 0;
+    });
+
+    return NextResponse.json({
+      balances: nonZeroBalances.map((b) => ({
+        asset: b.asset,
+        free: b.free,
+        locked: b.locked,
+      })),
+    });
   } catch (error) {
     console.error("[API] binance/account error:", error);
     const message = error instanceof Error ? error.message : "Internal server error";

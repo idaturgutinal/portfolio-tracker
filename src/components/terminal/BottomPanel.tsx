@@ -1,23 +1,28 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   MOCK_OPEN_ORDERS,
   MOCK_ORDER_HISTORY,
   MOCK_TRADE_HISTORY,
-  MOCK_BALANCES,
 } from "./mock-data";
 import { PriceAlerts } from "./PriceAlerts";
+import { useBinanceBalances } from "@/hooks/useBinanceAccount";
+import type { TickerData } from "@/hooks/useBinanceMarket";
 
 type Tab = "openOrders" | "orderHistory" | "tradeHistory" | "balances" | "alerts";
 
 interface BottomPanelProps {
   currentSymbol?: string;
+  tickers: Map<string, TickerData>;
 }
 
-export function BottomPanel({ currentSymbol = "BTCUSDT" }: BottomPanelProps) {
+export function BottomPanel({ currentSymbol = "BTCUSDT", tickers }: BottomPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>("openOrders");
   const [hideZero, setHideZero] = useState(false);
+
+  const { balances, isLoading, error, hasApiKey } = useBinanceBalances(tickers);
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "openOrders", label: "Open Orders" },
@@ -27,11 +32,11 @@ export function BottomPanel({ currentSymbol = "BTCUSDT" }: BottomPanelProps) {
     { key: "alerts", label: "Alerts" },
   ];
 
-  const totalPortfolioValue = MOCK_BALANCES.reduce((sum, b) => sum + b.usdtValue, 0);
-
   const filteredBalances = hideZero
-    ? MOCK_BALANCES.filter((b) => b.total > 0)
-    : MOCK_BALANCES;
+    ? balances.filter((b) => b.total > 0)
+    : balances;
+
+  const totalPortfolioValue = balances.reduce((sum, b) => sum + b.usdtValue, 0);
 
   return (
     <div className="flex flex-col h-full bg-gray-900 text-white">
@@ -156,42 +161,87 @@ export function BottomPanel({ currentSymbol = "BTCUSDT" }: BottomPanelProps) {
 
         {activeTab === "balances" && (
           <div>
-            <div className="flex items-center justify-between px-3 py-2 border-b border-gray-800">
-              <span className="text-sm">
-                Total Portfolio Value: <span className="font-mono font-bold text-yellow-500">${totalPortfolioValue.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
-              </span>
-              <label className="flex items-center gap-2 text-xs text-gray-400 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={hideZero}
-                  onChange={(e) => setHideZero(e.target.checked)}
-                  className="rounded border-gray-600 bg-gray-800"
-                />
-                Hide zero balances
-              </label>
-            </div>
-            <table className="w-full text-xs">
-              <thead className="sticky top-0 bg-gray-900">
-                <tr className="text-gray-500 border-b border-gray-800">
-                  <th className="text-left px-3 py-2 font-medium">Coin</th>
-                  <th className="text-right px-3 py-2 font-medium">Total</th>
-                  <th className="text-right px-3 py-2 font-medium">Available</th>
-                  <th className="text-right px-3 py-2 font-medium">Locked</th>
-                  <th className="text-right px-3 py-2 font-medium">USDT Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredBalances.map((balance) => (
-                  <tr key={balance.coin} className="border-b border-gray-800 hover:bg-gray-800/50">
-                    <td className="px-3 py-2 font-medium">{balance.coin}</td>
-                    <td className="px-3 py-2 text-right font-mono">{balance.total.toLocaleString()}</td>
-                    <td className="px-3 py-2 text-right font-mono">{balance.available.toLocaleString()}</td>
-                    <td className="px-3 py-2 text-right font-mono text-gray-400">{balance.locked.toLocaleString()}</td>
-                    <td className="px-3 py-2 text-right font-mono">${balance.usdtValue.toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {/* No API key state */}
+            {!hasApiKey && !isLoading && (
+              <div className="flex flex-col items-center justify-center py-8 text-gray-400 text-sm">
+                <p>API key gerekli.</p>
+                <Link href="/dashboard/settings" className="text-yellow-500 hover:text-yellow-400 mt-1">
+                  Settings &rarr; API Keys sayfasından ekleyin.
+                </Link>
+              </div>
+            )}
+
+            {/* Loading state */}
+            {isLoading && hasApiKey && (
+              <div className="flex items-center justify-center py-8 text-gray-400 text-sm">
+                <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Loading balances...
+              </div>
+            )}
+
+            {/* Error state */}
+            {error && !isLoading && hasApiKey && (
+              <div className="flex items-center justify-center py-8 text-red-400 text-sm">
+                {error}
+              </div>
+            )}
+
+            {/* Balances table */}
+            {!isLoading && !error && hasApiKey && (
+              <>
+                <div className="flex items-center justify-between px-3 py-2 border-b border-gray-800">
+                  <span className="text-sm">
+                    Total Portfolio Value:{" "}
+                    <span className="font-mono font-bold text-yellow-500">
+                      ${totalPortfolioValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </span>
+                  <label className="flex items-center gap-2 text-xs text-gray-400 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={hideZero}
+                      onChange={(e) => setHideZero(e.target.checked)}
+                      className="rounded border-gray-600 bg-gray-800"
+                    />
+                    Hide zero balances
+                  </label>
+                </div>
+
+                {filteredBalances.length === 0 ? (
+                  <div className="flex items-center justify-center py-8 text-gray-400 text-sm">
+                    No balances found
+                  </div>
+                ) : (
+                  <table className="w-full text-xs">
+                    <thead className="sticky top-0 bg-gray-900">
+                      <tr className="text-gray-500 border-b border-gray-800">
+                        <th className="text-left px-3 py-2 font-medium">Coin</th>
+                        <th className="text-right px-3 py-2 font-medium">Total</th>
+                        <th className="text-right px-3 py-2 font-medium">Available</th>
+                        <th className="text-right px-3 py-2 font-medium">Locked</th>
+                        <th className="text-right px-3 py-2 font-medium">USDT Value</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredBalances.map((balance) => (
+                        <tr key={balance.asset} className="border-b border-gray-800 hover:bg-gray-800/50">
+                          <td className="px-3 py-2 font-medium">{balance.asset}</td>
+                          <td className="px-3 py-2 text-right font-mono">{balance.total.toLocaleString()}</td>
+                          <td className="px-3 py-2 text-right font-mono">{balance.free.toLocaleString()}</td>
+                          <td className="px-3 py-2 text-right font-mono text-gray-400">{balance.locked.toLocaleString()}</td>
+                          <td className="px-3 py-2 text-right font-mono">
+                            ${balance.usdtValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </>
+            )}
           </div>
         )}
 
