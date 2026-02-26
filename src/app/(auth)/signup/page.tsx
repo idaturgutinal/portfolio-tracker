@@ -57,7 +57,7 @@ export default function SignupPage() {
     if (!email.trim() || !EMAIL_RE.test(email)) return "Enter a valid email address.";
     if (password.length < 8) return "Password must be at least 8 characters.";
     if (password !== confirm) return "Passwords do not match.";
-    if (!agreed) return "You must agree to the Terms of Service and Privacy Policy.";
+    if (!agreed) return "You must agree to the Terms of Service, Privacy Policy, and Disclaimer & Risk Disclosure.";
     return null;
   }
 
@@ -346,6 +346,10 @@ export default function SignupPage() {
               <Link href="/privacy" className="underline underline-offset-4 hover:text-foreground" target="_blank">
                 Privacy Policy
               </Link>
+              , and{" "}
+              <Link href="/disclaimer" className="underline underline-offset-4 hover:text-foreground" target="_blank">
+                Disclaimer &amp; Risk Disclosure
+              </Link>
             </Label>
           </div>
         </CardContent>
@@ -370,7 +374,7 @@ export default function SignupPage() {
             className="w-full"
             onClick={() => {
               if (!agreed) {
-                setError("You must agree to the Terms of Service and Privacy Policy.");
+                setError("You must agree to the Terms of Service, Privacy Policy, and Disclaimer & Risk Disclosure.");
                 return;
               }
               signIn("google", { callbackUrl: "/dashboard" });

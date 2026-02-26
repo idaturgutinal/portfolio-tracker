@@ -155,6 +155,10 @@ export default function LoginPage() {
           <Link href="/privacy" className="underline underline-offset-4 hover:text-muted-foreground">
             Privacy Policy
           </Link>
+          , and{" "}
+          <Link href="/disclaimer" className="underline underline-offset-4 hover:text-muted-foreground">
+            Disclaimer &amp; Risk Disclosure
+          </Link>
           .
         </p>
       </CardFooter>
