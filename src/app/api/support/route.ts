@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
   const rl = rateLimit(`support:${userId}`, 3, 60 * 60 * 1000);
   if (!rl.allowed) {
-    return tooManyRequests();
+    return tooManyRequests(undefined, rl.resetAt - Date.now());
   }
 
   try {

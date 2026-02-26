@@ -11,14 +11,14 @@ export async function DELETE(req: NextRequest) {
   // Rate limit: 5 deletion attempts per user per hour
   const rl = rateLimit(`delete-account:${userId}`, 5, 60 * 60 * 1000);
   if (!rl.allowed) {
-    return tooManyRequests();
+    return tooManyRequests(undefined, rl.resetAt - Date.now());
   }
 
   // Also rate limit by IP
   const ip = getClientIp(req);
   const ipRl = rateLimit(`delete-account-ip:${ip}`, 10, 60 * 60 * 1000);
   if (!ipRl.allowed) {
-    return tooManyRequests();
+    return tooManyRequests(undefined, ipRl.resetAt - Date.now());
   }
 
   try {

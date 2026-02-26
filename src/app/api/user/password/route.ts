@@ -11,7 +11,7 @@ export async function PATCH(req: NextRequest) {
   // Rate limit: 5 password change attempts per user per hour
   const rl = rateLimit(`change-password:${userId}`, 5, 60 * 60 * 1000);
   if (!rl.allowed) {
-    return tooManyRequests();
+    return tooManyRequests(undefined, rl.resetAt - Date.now());
   }
 
   try {

@@ -29,8 +29,12 @@ export function conflictResponse(error: string) {
   return NextResponse.json({ error }, { status: 409 });
 }
 
-export function tooManyRequests(error = "Too many requests. Please try again later.") {
-  return NextResponse.json({ error }, { status: 429 });
+export function tooManyRequests(error = "Too many requests. Please try again later.", retryAfterMs?: number) {
+  const headers: Record<string, string> = {};
+  if (retryAfterMs !== undefined) {
+    headers["Retry-After"] = String(Math.ceil(retryAfterMs / 1000));
+  }
+  return NextResponse.json({ error }, { status: 429, headers });
 }
 
 export function serverError(error = "An unexpected error occurred.") {
