@@ -165,23 +165,44 @@ export class BinanceOrderClient {
     const signature = this.createSignature(queryString);
     const signedQuery = `${queryString}&signature=${signature}`;
 
-    const url =
+    const binanceUrl =
       method === "GET" || method === "DELETE"
         ? `${BINANCE_BASE_URL}${endpoint}?${signedQuery}`
         : `${BINANCE_BASE_URL}${endpoint}`;
 
-    const headers: Record<string, string> = {
+    const binanceHeaders: Record<string, string> = {
       "X-MBX-APIKEY": this.apiKey,
     };
 
-    const fetchOptions: RequestInit = { method, headers };
-
     if (method === "POST") {
-      headers["Content-Type"] = "application/x-www-form-urlencoded";
-      fetchOptions.body = signedQuery;
+      binanceHeaders["Content-Type"] = "application/x-www-form-urlencoded";
     }
 
-    const response = await fetch(url, fetchOptions);
+    const proxyUrl = process.env.BINANCE_PROXY_URL;
+
+    let response: Response;
+
+    if (proxyUrl) {
+      response = await fetch(proxyUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Proxy-Secret": "fv-proxy-2026",
+        },
+        body: JSON.stringify({
+          method,
+          endpoint: binanceUrl,
+          headers: binanceHeaders,
+          payload: method === "POST" ? signedQuery : undefined,
+        }),
+      });
+    } else {
+      const fetchOptions: RequestInit = { method, headers: binanceHeaders };
+      if (method === "POST") {
+        fetchOptions.body = signedQuery;
+      }
+      response = await fetch(binanceUrl, fetchOptions);
+    }
     const data: T | BinanceApiError = await response.json();
 
     if (!response.ok) {
