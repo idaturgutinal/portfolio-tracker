@@ -373,3 +373,67 @@ export async function getFXRate(targetCurrency: string): Promise<number> {
   if (!result.data || result.data.price <= 0 || !isFinite(result.data.price)) return 1;
   return 1 / result.data.price;
 }
+
+/**
+ * Get FX rates for converting multiple source currencies into a single target.
+ *
+ * Uses USD as the intermediary:
+ *   1. Fetch `{CUR}USD=X` for every unique non-USD currency (both sources and target)
+ *   2. source→target rate = sourceToUsd / targetToUsd
+ *
+ * @returns Map where key = source currency, value = multiply-by rate to get target currency
+ *
+ * Example: getMultiFXRates(["USD","TRY","EUR"], "USD")
+ *   → Map { "USD" => 1, "TRY" => 0.028, "EUR" => 1.08 }
+ */
+export async function getMultiFXRates(
+  currencies: string[],
+  target: string
+): Promise<Map<string, number>> {
+  const unique = [...new Set(currencies)];
+  const rates = new Map<string, number>();
+
+  // Collect all currencies that need a USD rate (sources + target)
+  const needUsdRate = new Set<string>();
+  for (const cur of unique) {
+    if (cur !== "USD") needUsdRate.add(cur);
+  }
+  if (target !== "USD") needUsdRate.add(target);
+
+  // Fetch {CUR}USD=X for each — gives "1 CUR = ? USD"
+  const usdRates = new Map<string, number>();
+  usdRates.set("USD", 1);
+
+  const symbols = [...needUsdRate];
+  const results = await Promise.allSettled(
+    symbols.map((cur) => getQuote(`${cur}USD=X`))
+  );
+
+  symbols.forEach((cur, i) => {
+    const r = results[i];
+    if (
+      r.status === "fulfilled" &&
+      r.value.data &&
+      r.value.data.price > 0 &&
+      isFinite(r.value.data.price)
+    ) {
+      usdRates.set(cur, r.value.data.price);
+    } else {
+      usdRates.set(cur, 1); // fallback
+    }
+  });
+
+  // Compute source→target: (1 source in USD) / (1 target in USD)
+  const targetToUsd = usdRates.get(target) ?? 1;
+
+  for (const cur of unique) {
+    if (cur === target) {
+      rates.set(cur, 1);
+    } else {
+      const sourceToUsd = usdRates.get(cur) ?? 1;
+      rates.set(cur, targetToUsd > 0 ? sourceToUsd / targetToUsd : 1);
+    }
+  }
+
+  return rates;
+}

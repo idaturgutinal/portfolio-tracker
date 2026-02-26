@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { getBatchQuotes, getFXRate, toMarketSymbol } from "@/services/marketData";
+import { getBatchQuotes, getMultiFXRates, toMarketSymbol } from "@/services/marketData";
 
 export interface AssetMetric {
   id: string;
@@ -76,15 +76,18 @@ export async function getDashboardData(
     groupMap.get(key)!.push(a);
   }
 
-  // ── Fetch live prices for unique Yahoo symbols + FX rate ─────────────────
+  // ── Fetch live prices for unique Yahoo symbols + FX rates ────────────────
   const uniqueSymbols = [
     ...new Set(
       [...groupMap.values()].map((g) => toMarketSymbol(g[0].symbol, g[0].assetType))
     ),
   ];
-  const [quotes, fxRate] = await Promise.all([
+  const uniqueCurrencies = [
+    ...new Set([...groupMap.values()].map((g) => g[0].currency)),
+  ];
+  const [quotes, fxRates] = await Promise.all([
     getBatchQuotes(uniqueSymbols),
-    getFXRate(currency),
+    getMultiFXRates(uniqueCurrencies, currency),
   ]);
 
   let pricesStale = false;
@@ -102,10 +105,12 @@ export async function getDashboardData(
 
     if (!quote) pricesStale = true;
 
-    const currentPrice = quote ? quote.price * fxRate : null;
-    const effectivePrice = currentPrice ?? weightedAvgBuy * fxRate;
+    const assetCurrency = group[0].currency;
+    const fxToDisplay = fxRates.get(assetCurrency) ?? 1;
+    const currentPrice = quote ? quote.price * fxToDisplay : null;
+    const effectivePrice = currentPrice ?? weightedAvgBuy * fxToDisplay;
     const value = totalQty * effectivePrice;
-    const costBasis = totalQty * weightedAvgBuy * fxRate;
+    const costBasis = totalQty * weightedAvgBuy * fxToDisplay;
     const gainLoss = value - costBasis;
     const gainLossPct = costBasis > 0 ? gainLoss / costBasis : 0;
 
@@ -125,10 +130,7 @@ export async function getDashboardData(
 
   // ── Totals ───────────────────────────────────────────────────────────────
   const totalValue = assetMetrics.reduce((s, a) => s + a.value, 0);
-  const totalCost = assetMetrics.reduce(
-    (s, a) => s + a.quantity * a.averageBuyPrice * fxRate,
-    0
-  );
+  const totalCost = assetMetrics.reduce((s, a) => s + a.value - a.gainLoss, 0);
   const totalGainLoss = totalValue - totalCost;
   const totalGainLossPct = totalCost > 0 ? totalGainLoss / totalCost : 0;
 
