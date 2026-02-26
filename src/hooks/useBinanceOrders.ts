@@ -155,7 +155,7 @@ export function useOrderHistory(symbol: string) {
           setIsLoading(false);
         },
         onSuccess: (data) => {
-          setOrders(data);
+          setOrders([...data].reverse());
           setHasApiKey(true);
           setError(null);
           setIsLoading(false);
@@ -214,7 +214,7 @@ export function useTradeHistory(symbol: string) {
           setIsLoading(false);
         },
         onSuccess: (data) => {
-          setTrades(data);
+          setTrades([...data].reverse());
           setHasApiKey(true);
           setError(null);
           setIsLoading(false);
