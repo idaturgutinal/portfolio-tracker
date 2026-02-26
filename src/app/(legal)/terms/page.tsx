@@ -64,6 +64,27 @@ export default function TermsPage() {
         or trading advice. You should consult a qualified financial professional
         before making any investment decisions.
       </p>
+      <h3>API Key Security</h3>
+      <p>
+        You are solely responsible for the security of any third-party API keys
+        you provide. FolioVault stores API keys in encrypted form but cannot
+        guarantee absolute security. You should use API keys with the minimum
+        required permissions and enable IP restrictions.
+      </p>
+      <h3>Trading Risk</h3>
+      <p>
+        Trading features are provided for convenience only. FolioVault does not
+        execute trades on your behalf — all orders are submitted directly to
+        third-party exchanges via your own API keys. You bear full
+        responsibility for any trading decisions and resulting financial
+        outcomes.
+      </p>
+      <h3>No Liability for Exchange Actions</h3>
+      <p>
+        FolioVault is not responsible for any actions taken by third-party
+        exchanges, including but not limited to account freezes, order
+        rejections, or changes to their API services.
+      </p>
 
       <h2>6. Limitation of Liability</h2>
       <p>
@@ -106,6 +127,10 @@ export default function TermsPage() {
         See also our{" "}
         <Link href="/privacy" className="underline underline-offset-4 hover:text-foreground">
           Privacy Policy
+        </Link>
+        {" "}and{" "}
+        <Link href="/disclaimer" className="underline underline-offset-4 hover:text-foreground">
+          Disclaimer &amp; Risk Disclosure
         </Link>
         .
       </p>

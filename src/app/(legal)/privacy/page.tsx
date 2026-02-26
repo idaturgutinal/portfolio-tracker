@@ -31,6 +31,13 @@ export default function PrivacyPage() {
         transaction records, and related financial data. This data is provided
         voluntarily and is used solely to deliver the service.
       </p>
+      <h3>API Keys</h3>
+      <p>
+        If you connect a third-party exchange account, we store your API keys in
+        our database. These keys are used solely to execute your requested
+        operations (viewing balances, placing orders). We recommend using API
+        keys with restricted permissions and IP whitelisting for added security.
+      </p>
       <h3>Usage Data</h3>
       <p>
         We may collect basic usage information such as pages visited, features
@@ -109,6 +116,10 @@ export default function PrivacyPage() {
         See also our{" "}
         <Link href="/terms" className="underline underline-offset-4 hover:text-foreground">
           Terms of Service
+        </Link>
+        {" "}and{" "}
+        <Link href="/disclaimer" className="underline underline-offset-4 hover:text-foreground">
+          Disclaimer &amp; Risk Disclosure
         </Link>
         .
       </p>
