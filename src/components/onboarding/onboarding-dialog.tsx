@@ -48,7 +48,7 @@ export function OnboardingDialog({ userId }: Props) {
               <Rocket className="h-5 w-5 text-primary" />
             </span>
             <div>
-              <DialogTitle className="text-xl">Welcome to Portfolio Tracker</DialogTitle>
+              <DialogTitle className="text-xl">Welcome to FolioVault</DialogTitle>
               <p className="text-sm text-muted-foreground mt-0.5">
                 Here&apos;s how to get the most out of the app — takes 2 minutes to read.
               </p>

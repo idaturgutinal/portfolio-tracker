@@ -2,9 +2,11 @@ import {
   FolderOpen,
   TrendingUp,
   ArrowLeftRight,
+  LineChart,
   Bell,
   Eye,
   BarChart2,
+  Download,
 } from "lucide-react";
 
 export interface GuideStep {
@@ -18,37 +20,49 @@ export const GUIDE_STEPS: GuideStep[] = [
   {
     icon: FolderOpen,
     color: "bg-blue-100 text-blue-600",
-    title: "Create a Portfolio",
-    body: 'Go to Assets → Add Asset → "+ Create new portfolio". Give it a name (e.g. "Main", "ISA", "Crypto") — you can have as many as you like.',
+    title: "Create Portfolios",
+    body: "Go to Assets → Add Asset → '+ Create new portfolio'. Organize by strategy — Main, Crypto, ISA — as many as you like.",
   },
   {
     icon: TrendingUp,
     color: "bg-violet-100 text-violet-600",
-    title: "Add Your Holdings",
-    body: "Search any stock, crypto, ETF or fund by symbol (AAPL, BTC, SPY…). Enter the quantity you currently hold and your average buy price.",
+    title: "Track Any Asset",
+    body: "Add stocks, crypto, ETFs, or funds by symbol. Enter your holdings and average buy price for instant portfolio valuation.",
   },
   {
     icon: ArrowLeftRight,
     color: "bg-amber-100 text-amber-600",
     title: "Log Transactions",
-    body: "Use the Transactions page to record every BUY, SELL or DIVIDEND. Quantities and average buy prices are recalculated automatically.",
+    body: "Record every BUY, SELL, or DIVIDEND on the Transactions page. Quantities and averages update automatically.",
+  },
+  {
+    icon: LineChart,
+    color: "bg-green-100 text-green-600",
+    title: "Binance Trading Terminal",
+    body: "Connect your Binance API key in Settings to view real balances, place orders, and track trades — all from within FolioVault.",
   },
   {
     icon: Bell,
     color: "bg-red-100 text-red-600",
     title: "Set Price Alerts",
-    body: "In Alerts, choose an asset and a target price (above or below). The alert fires the next time you visit the dashboard — no refresh needed.",
+    body: "Choose any asset, set a target price (above or below), and get notified when it triggers. Works for both portfolio assets and Binance pairs.",
   },
   {
     icon: Eye,
     color: "bg-teal-100 text-teal-600",
-    title: "Use the Watchlist",
-    body: "Track tickers you are researching without committing capital. The Watchlist shows live prices and daily change for every symbol you add.",
+    title: "Watchlist",
+    body: "Track tickers you're researching without buying. See live prices, daily change, and quick-add to portfolio when ready.",
   },
   {
     icon: BarChart2,
     color: "bg-orange-100 text-orange-600",
-    title: "Analyse Performance",
-    body: "The Dashboard shows a portfolio overview. Analytics goes deeper: P&L bar chart, allocation pie, a sortable asset-breakdown table and full return history.",
+    title: "Analytics & Performance",
+    body: "Dashboard overview plus deep analytics: P&L charts, allocation breakdown, sortable tables, and full return history.",
+  },
+  {
+    icon: Download,
+    color: "bg-gray-100 text-gray-600",
+    title: "Export Your Data",
+    body: "Export your order history and trade data as CSV for tax reporting or personal records.",
   },
 ];
