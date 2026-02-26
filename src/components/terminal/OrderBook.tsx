@@ -1,22 +1,69 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useBinanceDepth } from "@/hooks/useBinanceMarket";
 import { generateOrderBook } from "./mock-data";
 
 interface OrderBookProps {
+  symbol: string;
   basePrice: number;
   baseAsset: string;
   quoteAsset: string;
 }
 
-export function OrderBook({ basePrice, baseAsset, quoteAsset }: OrderBookProps) {
+interface ParsedEntry {
+  price: number;
+  amount: number;
+  total: number;
+}
+
+export function OrderBook({ symbol, basePrice, baseAsset, quoteAsset }: OrderBookProps) {
   const [precision, setPrecision] = useState(0.01);
   const precisionOptions = [0.01, 0.1, 1, 10];
 
-  const { asks, bids } = useMemo(
-    () => generateOrderBook(basePrice, 15, precision),
-    [basePrice, precision]
-  );
+  const { bids: liveBids, asks: liveAsks, isLoading } = useBinanceDepth(symbol);
+
+  const hasLiveData = liveBids.length > 0 || liveAsks.length > 0;
+
+  const { asks, bids, spread } = useMemo(() => {
+    if (hasLiveData) {
+      // Parse live data
+      let askTotal = 0;
+      const parsedAsks: ParsedEntry[] = liveAsks.map(([p, q]) => {
+        const price = parseFloat(p);
+        const amount = parseFloat(q);
+        askTotal += amount;
+        return { price, amount, total: askTotal };
+      });
+
+      let bidTotal = 0;
+      const parsedBids: ParsedEntry[] = liveBids.map(([p, q]) => {
+        const price = parseFloat(p);
+        const amount = parseFloat(q);
+        bidTotal += amount;
+        return { price, amount, total: bidTotal };
+      });
+
+      const bestAsk = parsedAsks.length > 0 ? parsedAsks[0].price : 0;
+      const bestBid = parsedBids.length > 0 ? parsedBids[0].price : 0;
+      const spreadVal = bestAsk > 0 && bestBid > 0 ? bestAsk - bestBid : 0;
+      const spreadPercent = bestBid > 0 ? (spreadVal / bestBid) * 100 : 0;
+
+      return {
+        asks: parsedAsks,
+        bids: parsedBids,
+        spread: { value: spreadVal, percent: spreadPercent },
+      };
+    }
+
+    // Fallback to mock data
+    const mock = generateOrderBook(basePrice, 15, precision);
+    return {
+      asks: mock.asks,
+      bids: mock.bids,
+      spread: { value: 0, percent: 0 },
+    };
+  }, [hasLiveData, liveAsks, liveBids, basePrice, precision]);
 
   const maxTotal = Math.max(
     asks.length > 0 ? asks[asks.length - 1].total : 0,
@@ -26,6 +73,8 @@ export function OrderBook({ basePrice, baseAsset, quoteAsset }: OrderBookProps) 
   function formatPrice(price: number): string {
     if (precision >= 1) return price.toFixed(0);
     if (precision >= 0.1) return price.toFixed(1);
+    if (price < 0.001) return price.toFixed(8);
+    if (price < 1) return price.toFixed(4);
     return price.toFixed(2);
   }
 
@@ -56,13 +105,20 @@ export function OrderBook({ basePrice, baseAsset, quoteAsset }: OrderBookProps) 
         <span className="w-24 text-right">Total</span>
       </div>
 
+      {/* Loading */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-2">
+          <div className="h-3 w-3 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+
       {/* Asks (sells) - reversed so lowest ask is at bottom */}
       <div className="flex-1 overflow-hidden flex flex-col justify-end">
         {[...asks].reverse().map((entry, i) => (
-          <div key={`ask-${i}`} className="relative flex px-3 py-[2px] text-[11px] font-mono">
+          <div key={`ask-${i}`} className="relative flex px-3 py-[2px] text-[11px] font-mono transition-all duration-200">
             <div
               className="absolute inset-y-0 right-0 bg-red-500/10"
-              style={{ width: `${(entry.total / maxTotal) * 100}%` }}
+              style={{ width: `${maxTotal > 0 ? (entry.total / maxTotal) * 100 : 0}%` }}
             />
             <span className="relative flex-1 text-red-400">{formatPrice(entry.price)}</span>
             <span className="relative w-24 text-right text-gray-300">{entry.amount.toFixed(4)}</span>
@@ -76,15 +132,20 @@ export function OrderBook({ basePrice, baseAsset, quoteAsset }: OrderBookProps) 
         <span className="text-lg font-bold font-mono text-white">
           {basePrice.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </span>
+        {hasLiveData && spread.value > 0 && (
+          <div className="text-[10px] text-gray-500">
+            Spread: {spread.value < 1 ? spread.value.toFixed(4) : spread.value.toFixed(2)} ({spread.percent.toFixed(3)}%)
+          </div>
+        )}
       </div>
 
       {/* Bids (buys) */}
       <div className="flex-1 overflow-hidden">
         {bids.map((entry, i) => (
-          <div key={`bid-${i}`} className="relative flex px-3 py-[2px] text-[11px] font-mono">
+          <div key={`bid-${i}`} className="relative flex px-3 py-[2px] text-[11px] font-mono transition-all duration-200">
             <div
               className="absolute inset-y-0 right-0 bg-green-500/10"
-              style={{ width: `${(entry.total / maxTotal) * 100}%` }}
+              style={{ width: `${maxTotal > 0 ? (entry.total / maxTotal) * 100 : 0}%` }}
             />
             <span className="relative flex-1 text-green-400">{formatPrice(entry.price)}</span>
             <span className="relative w-24 text-right text-gray-300">{entry.amount.toFixed(4)}</span>

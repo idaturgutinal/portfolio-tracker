@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useCallback, useRef, forwardRef, useImper
 import { Star, Search, ChevronUp, ChevronDown } from "lucide-react";
 import { COIN_PAIRS, type CoinPair } from "./mock-data";
 import { toast } from "@/hooks/use-toast";
+import type { TickerData } from "@/hooks/useBinanceMarket";
 
 type Category = "USDT" | "BTC" | "BNB" | "Favorites";
 type SortKey = "symbol" | "price" | "change" | "volume";
@@ -18,6 +19,8 @@ interface FavoritePair {
 interface CoinListProps {
   selectedSymbol: string;
   onSelectPair: (pair: CoinPair) => void;
+  tickers?: Map<string, TickerData>;
+  tickersLoading?: boolean;
 }
 
 export interface CoinListHandle {
@@ -25,7 +28,7 @@ export interface CoinListHandle {
 }
 
 export const CoinList = forwardRef<CoinListHandle, CoinListProps>(
-  function CoinList({ selectedSymbol, onSelectPair }, ref) {
+  function CoinList({ selectedSymbol, onSelectPair, tickers, tickersLoading }, ref) {
     const [search, setSearch] = useState("");
     const [category, setCategory] = useState<Category>("USDT");
     const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -33,11 +36,35 @@ export const CoinList = forwardRef<CoinListHandle, CoinListProps>(
     const [sortKey, setSortKey] = useState<SortKey>("volume");
     const [sortDir, setSortDir] = useState<SortDir>("desc");
     const [loadingFavs, setLoadingFavs] = useState(false);
+    const [flashSymbols, setFlashSymbols] = useState<Map<string, "up" | "down">>(new Map());
+    const prevPricesRef = useRef<Map<string, number>>(new Map());
     const searchRef = useRef<HTMLInputElement>(null);
 
     useImperativeHandle(ref, () => ({
       focusSearch: () => searchRef.current?.focus(),
     }));
+
+    // Track price changes for flash animation
+    useEffect(() => {
+      if (!tickers || tickers.size === 0) return;
+
+      const newFlash = new Map<string, "up" | "down">();
+      const prevPrices = prevPricesRef.current;
+
+      tickers.forEach((ticker, symbol) => {
+        const prev = prevPrices.get(symbol);
+        if (prev !== undefined && prev !== ticker.lastPrice) {
+          newFlash.set(symbol, ticker.lastPrice > prev ? "up" : "down");
+        }
+        prevPrices.set(symbol, ticker.lastPrice);
+      });
+
+      if (newFlash.size > 0) {
+        setFlashSymbols(newFlash);
+        const timeout = setTimeout(() => setFlashSymbols(new Map()), 500);
+        return () => clearTimeout(timeout);
+      }
+    }, [tickers]);
 
     const fetchFavorites = useCallback(async () => {
       try {
@@ -137,15 +164,33 @@ export const CoinList = forwardRef<CoinListHandle, CoinListProps>(
       }
     };
 
+    // Merge live ticker data with mock coin pairs
+    const pairsWithLiveData = useMemo(() => {
+      if (!tickers || tickers.size === 0) return COIN_PAIRS;
+
+      return COIN_PAIRS.map((pair) => {
+        const ticker = tickers.get(pair.symbol);
+        if (!ticker) return pair;
+        return {
+          ...pair,
+          price: ticker.lastPrice,
+          change24h: ticker.priceChangePercent,
+          high24h: ticker.highPrice,
+          low24h: ticker.lowPrice,
+          volume24h: ticker.quoteVolume,
+        };
+      });
+    }, [tickers]);
+
     const filtered = useMemo(() => {
-      let pairs = COIN_PAIRS;
+      let pairs = pairsWithLiveData;
 
       if (category === "Favorites") {
         const favSymbols = favoritePairs
           .sort((a, b) => a.sortOrder - b.sortOrder)
           .map((f) => f.symbol);
         pairs = favSymbols
-          .map((s) => COIN_PAIRS.find((p) => p.symbol === s))
+          .map((s) => pairsWithLiveData.find((p) => p.symbol === s))
           .filter((p): p is CoinPair => p !== undefined);
       } else {
         pairs = pairs.filter((p) => p.category === category);
@@ -171,7 +216,7 @@ export const CoinList = forwardRef<CoinListHandle, CoinListProps>(
 
       return pairs;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [category, search, sortKey, sortDir, favoritePairs]);
+    }, [category, search, sortKey, sortDir, favoritePairs, pairsWithLiveData]);
 
     const categories: Category[] = ["USDT", "BTC", "BNB", "Favorites"];
 
@@ -232,42 +277,54 @@ export const CoinList = forwardRef<CoinListHandle, CoinListProps>(
           )}
         </div>
 
+        {/* Loading state */}
+        {tickersLoading && (
+          <div className="flex items-center justify-center py-4">
+            <div className="h-4 w-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
+            <span className="ml-2 text-xs text-gray-400">Loading prices...</span>
+          </div>
+        )}
+
         {/* Coin list */}
         <div className="flex-1 overflow-y-auto">
-          {filtered.map((pair) => (
-            <button
-              key={pair.symbol}
-              onClick={() => onSelectPair(pair)}
-              className={`flex items-center w-full px-2 py-1.5 text-xs hover:bg-gray-800 transition-colors ${
-                selectedSymbol === pair.symbol ? "bg-gray-800" : ""
-              }`}
-            >
+          {filtered.map((pair) => {
+            const flash = flashSymbols.get(pair.symbol);
+            return (
               <button
-                onClick={(e) => { e.stopPropagation(); toggleFavorite(pair.symbol); }}
-                className="mr-1 shrink-0"
-                disabled={loadingFavs}
+                key={pair.symbol}
+                onClick={() => onSelectPair(pair)}
+                className={`flex items-center w-full px-2 py-1.5 text-xs hover:bg-gray-800 transition-colors ${
+                  selectedSymbol === pair.symbol ? "bg-gray-800" : ""
+                } ${flash === "up" ? "bg-green-500/10" : flash === "down" ? "bg-red-500/10" : ""}`}
+                style={{ transition: "background-color 0.3s ease" }}
               >
-                <Star
-                  className={`h-3 w-3 ${favorites.has(pair.symbol) ? "fill-yellow-500 text-yellow-500" : "text-gray-600"}`}
-                />
-              </button>
-              <span className="flex-1 text-left font-medium">{pair.baseAsset}<span className="text-gray-500">/{pair.quoteAsset}</span></span>
-              <span className="w-20 text-right font-mono">{formatPrice(pair.price)}</span>
-              <span className={`w-16 text-right font-mono ${pair.change24h >= 0 ? "text-green-500" : "text-red-500"}`}>
-                {pair.change24h >= 0 ? "+" : ""}{pair.change24h.toFixed(2)}%
-              </span>
-              {category === "Favorites" && (
-                <span className="w-10 flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
-                  <button onClick={() => moveFavorite(pair.symbol, "up")} className="text-gray-500 hover:text-gray-300">
-                    <ChevronUp className="h-3 w-3" />
-                  </button>
-                  <button onClick={() => moveFavorite(pair.symbol, "down")} className="text-gray-500 hover:text-gray-300">
-                    <ChevronDown className="h-3 w-3" />
-                  </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); toggleFavorite(pair.symbol); }}
+                  className="mr-1 shrink-0"
+                  disabled={loadingFavs}
+                >
+                  <Star
+                    className={`h-3 w-3 ${favorites.has(pair.symbol) ? "fill-yellow-500 text-yellow-500" : "text-gray-600"}`}
+                  />
+                </button>
+                <span className="flex-1 text-left font-medium">{pair.baseAsset}<span className="text-gray-500">/{pair.quoteAsset}</span></span>
+                <span className="w-20 text-right font-mono">{formatPrice(pair.price)}</span>
+                <span className={`w-16 text-right font-mono ${pair.change24h >= 0 ? "text-green-500" : "text-red-500"}`}>
+                  {pair.change24h >= 0 ? "+" : ""}{pair.change24h.toFixed(2)}%
                 </span>
-              )}
-            </button>
-          ))}
+                {category === "Favorites" && (
+                  <span className="w-10 flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={() => moveFavorite(pair.symbol, "up")} className="text-gray-500 hover:text-gray-300">
+                      <ChevronUp className="h-3 w-3" />
+                    </button>
+                    <button onClick={() => moveFavorite(pair.symbol, "down")} className="text-gray-500 hover:text-gray-300">
+                      <ChevronDown className="h-3 w-3" />
+                    </button>
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
     );

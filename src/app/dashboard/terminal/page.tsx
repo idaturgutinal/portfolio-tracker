@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { COIN_PAIRS, type CoinPair } from "@/components/terminal/mock-data";
 import { TerminalHeader } from "@/components/terminal/TerminalHeader";
@@ -11,6 +11,7 @@ import { MarketTrades } from "@/components/terminal/MarketTrades";
 import { OrderForm } from "@/components/terminal/OrderForm";
 import { BottomPanel } from "@/components/terminal/BottomPanel";
 import { KeyboardShortcuts } from "@/components/terminal/KeyboardShortcuts";
+import { useBinanceTickers } from "@/hooks/useBinanceMarket";
 
 export default function TerminalPage() {
   const [selectedPair, setSelectedPair] = useState<CoinPair>(COIN_PAIRS[0]);
@@ -18,6 +19,33 @@ export default function TerminalPage() {
   const [orderSide, setOrderSide] = useState<"Buy" | "Sell">("Buy");
   const [chartFullscreen, setChartFullscreen] = useState(false);
   const coinListRef = useRef<CoinListHandle>(null);
+
+  const { tickers, isLoading: tickersLoading, error: tickersError } = useBinanceTickers();
+
+  // Get live ticker for the selected pair
+  const liveTicker = useMemo(() => {
+    return tickers.get(selectedPair.symbol);
+  }, [tickers, selectedPair.symbol]);
+
+  // Get live price (fallback to mock)
+  const currentPrice = liveTicker?.lastPrice ?? selectedPair.price;
+
+  // Update selectedPair with live data when selecting
+  const handleSelectPair = useCallback((pair: CoinPair) => {
+    const ticker = tickers.get(pair.symbol);
+    if (ticker) {
+      setSelectedPair({
+        ...pair,
+        price: ticker.lastPrice,
+        change24h: ticker.priceChangePercent,
+        high24h: ticker.highPrice,
+        low24h: ticker.lowPrice,
+        volume24h: ticker.quoteVolume,
+      });
+    } else {
+      setSelectedPair(pair);
+    }
+  }, [tickers]);
 
   const handleBuy = useCallback(() => setOrderSide("Buy"), []);
   const handleSell = useCallback(() => setOrderSide("Sell"), []);
@@ -37,8 +65,15 @@ export default function TerminalPage() {
         onToggleFullscreen={handleToggleFullscreen}
       />
 
+      {/* API Error Banner */}
+      {tickersError && (
+        <div className="px-4 py-1 bg-yellow-900/50 border-b border-yellow-700 text-xs text-yellow-300">
+          Binance API unavailable - showing cached/mock data. {tickersError}
+        </div>
+      )}
+
       {/* Terminal Header */}
-      <TerminalHeader selectedPair={selectedPair} />
+      <TerminalHeader selectedPair={selectedPair} liveTicker={liveTicker} />
 
       {/* Main content area */}
       <div className="flex-1 flex min-h-0">
@@ -47,7 +82,13 @@ export default function TerminalPage() {
           <div className={`relative flex-shrink-0 border-r border-gray-700 transition-all duration-200 ${coinListCollapsed ? "w-0" : "w-52"}`}>
             {!coinListCollapsed && (
               <div className="h-full w-52">
-                <CoinList ref={coinListRef} selectedSymbol={selectedPair.symbol} onSelectPair={setSelectedPair} />
+                <CoinList
+                  ref={coinListRef}
+                  selectedSymbol={selectedPair.symbol}
+                  onSelectPair={handleSelectPair}
+                  tickers={tickers}
+                  tickersLoading={tickersLoading}
+                />
               </div>
             )}
             <button
@@ -64,7 +105,7 @@ export default function TerminalPage() {
           <div className="flex-1 flex min-h-0">
             {/* Center: Chart */}
             <div className={`flex-1 min-w-0 ${chartFullscreen ? "" : "border-r border-gray-700"}`}>
-              <CandlestickChart basePrice={selectedPair.price} />
+              <CandlestickChart symbol={selectedPair.symbol} basePrice={currentPrice} />
             </div>
 
             {/* Right: OrderBook + MarketTrades + OrderForm */}
@@ -72,14 +113,16 @@ export default function TerminalPage() {
               <div className="w-72 flex-shrink-0 flex flex-col">
                 <div className="flex-1 min-h-0 border-b border-gray-700 overflow-hidden">
                   <OrderBook
-                    basePrice={selectedPair.price}
+                    symbol={selectedPair.symbol}
+                    basePrice={currentPrice}
                     baseAsset={selectedPair.baseAsset}
                     quoteAsset={selectedPair.quoteAsset}
                   />
                 </div>
                 <div className="h-48 border-b border-gray-700 overflow-hidden">
                   <MarketTrades
-                    basePrice={selectedPair.price}
+                    symbol={selectedPair.symbol}
+                    basePrice={currentPrice}
                     baseAsset={selectedPair.baseAsset}
                     quoteAsset={selectedPair.quoteAsset}
                   />
@@ -88,7 +131,7 @@ export default function TerminalPage() {
                   <OrderForm
                     baseAsset={selectedPair.baseAsset}
                     quoteAsset={selectedPair.quoteAsset}
-                    currentPrice={selectedPair.price}
+                    currentPrice={currentPrice}
                     side={orderSide}
                     onSideChange={setOrderSide}
                   />

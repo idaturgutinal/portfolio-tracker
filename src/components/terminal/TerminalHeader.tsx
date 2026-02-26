@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Star, Bell } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Star, Bell, TrendingUp, TrendingDown } from "lucide-react";
 import type { CoinPair } from "./mock-data";
+import type { TickerData } from "@/hooks/useBinanceMarket";
 import { toast } from "@/hooks/use-toast";
 
 interface TerminalHeaderProps {
   selectedPair: CoinPair;
+  liveTicker?: TickerData;
 }
 
 function formatVolume(vol: number): string {
@@ -16,10 +18,28 @@ function formatVolume(vol: number): string {
   return vol.toFixed(2);
 }
 
-export function TerminalHeader({ selectedPair }: TerminalHeaderProps) {
-  const isPositive = selectedPair.change24h >= 0;
+export function TerminalHeader({ selectedPair, liveTicker }: TerminalHeaderProps) {
+  const price = liveTicker?.lastPrice ?? selectedPair.price;
+  const change = liveTicker?.priceChangePercent ?? selectedPair.change24h;
+  const high = liveTicker?.highPrice ?? selectedPair.high24h;
+  const low = liveTicker?.lowPrice ?? selectedPair.low24h;
+  const volume = liveTicker?.quoteVolume ?? selectedPair.volume24h;
+
+  const isPositive = change >= 0;
   const [isFavorite, setIsFavorite] = useState(false);
   const [hasAlert, setHasAlert] = useState(false);
+  const [priceDirection, setPriceDirection] = useState<"up" | "down" | null>(null);
+  const prevPriceRef = useRef<number>(price);
+
+  // Track price direction for animation
+  useEffect(() => {
+    if (prevPriceRef.current !== price) {
+      setPriceDirection(price > prevPriceRef.current ? "up" : "down");
+      prevPriceRef.current = price;
+      const timeout = setTimeout(() => setPriceDirection(null), 600);
+      return () => clearTimeout(timeout);
+    }
+  }, [price]);
 
   const checkFavorite = useCallback(async () => {
     try {
@@ -97,37 +117,43 @@ export function TerminalHeader({ selectedPair }: TerminalHeaderProps) {
         )}
       </div>
 
-      <div className="shrink-0">
-        <span className={`text-xl font-bold font-mono ${isPositive ? "text-green-500" : "text-red-500"}`}>
-          {selectedPair.price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      <div className="flex items-center gap-1 shrink-0">
+        <span className={`text-xl font-bold font-mono transition-colors duration-300 ${
+          priceDirection === "up" ? "text-green-400" :
+          priceDirection === "down" ? "text-red-400" :
+          isPositive ? "text-green-500" : "text-red-500"
+        }`}>
+          {price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </span>
+        {priceDirection === "up" && <TrendingUp className="h-4 w-4 text-green-400 animate-bounce" />}
+        {priceDirection === "down" && <TrendingDown className="h-4 w-4 text-red-400 animate-bounce" />}
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
         <span className="text-xs text-gray-400">24h Change</span>
         <span className={`text-sm font-mono font-medium ${isPositive ? "text-green-500" : "text-red-500"}`}>
-          {isPositive ? "+" : ""}{selectedPair.change24h.toFixed(2)}%
+          {isPositive ? "+" : ""}{change.toFixed(2)}%
         </span>
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
         <span className="text-xs text-gray-400">24h High</span>
         <span className="text-sm font-mono text-white">
-          {selectedPair.high24h.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+          {high.toLocaleString("en-US", { minimumFractionDigits: 2 })}
         </span>
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
         <span className="text-xs text-gray-400">24h Low</span>
         <span className="text-sm font-mono text-white">
-          {selectedPair.low24h.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+          {low.toLocaleString("en-US", { minimumFractionDigits: 2 })}
         </span>
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
         <span className="text-xs text-gray-400">24h Volume</span>
         <span className="text-sm font-mono text-white">
-          {formatVolume(selectedPair.volume24h)}
+          {formatVolume(volume)}
         </span>
       </div>
     </div>

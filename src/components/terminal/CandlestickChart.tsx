@@ -1,32 +1,41 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useBinanceKlines } from "@/hooks/useBinanceMarket";
 import { generateCandleData } from "./mock-data";
 
 interface CandlestickChartProps {
+  symbol: string;
   basePrice: number;
 }
 
 type ChartType = "Candlestick" | "Line" | "Area";
-type TimeInterval = { label: string; minutes: number };
 
-const TIME_INTERVALS: TimeInterval[] = [
-  { label: "1m", minutes: 1 },
-  { label: "5m", minutes: 5 },
-  { label: "15m", minutes: 15 },
-  { label: "30m", minutes: 30 },
-  { label: "1h", minutes: 60 },
-  { label: "4h", minutes: 240 },
-  { label: "1D", minutes: 1440 },
-  { label: "1W", minutes: 10080 },
+interface IntervalOption {
+  label: string;
+  value: string;
+  minutes: number;
+}
+
+const INTERVAL_OPTIONS: IntervalOption[] = [
+  { label: "1m", value: "1m", minutes: 1 },
+  { label: "5m", value: "5m", minutes: 5 },
+  { label: "15m", value: "15m", minutes: 15 },
+  { label: "30m", value: "30m", minutes: 30 },
+  { label: "1h", value: "1h", minutes: 60 },
+  { label: "4h", value: "4h", minutes: 240 },
+  { label: "1D", value: "1d", minutes: 1440 },
+  { label: "1W", value: "1w", minutes: 10080 },
 ];
 
-export function CandlestickChart({ basePrice }: CandlestickChartProps) {
+export function CandlestickChart({ symbol, basePrice }: CandlestickChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<{ remove: () => void } | null>(null);
-  const [selectedInterval, setSelectedInterval] = useState(TIME_INTERVALS[4]);
+  const [selectedInterval, setSelectedInterval] = useState(INTERVAL_OPTIONS[4]);
   const [chartType, setChartType] = useState<ChartType>("Candlestick");
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const { klines, isLoading, error } = useBinanceKlines(symbol, selectedInterval.value);
 
   const initChart = useCallback(async () => {
     if (!chartContainerRef.current) return;
@@ -66,7 +75,10 @@ export function CandlestickChart({ basePrice }: CandlestickChartProps) {
 
     chartInstanceRef.current = chart;
 
-    const candles = generateCandleData(basePrice, 200, selectedInterval.minutes);
+    // Use live klines if available, fall back to mock data
+    const candles = klines.length > 0
+      ? klines
+      : generateCandleData(basePrice, 200, selectedInterval.minutes);
 
     if (chartType === "Candlestick") {
       const candleSeries = chart.addSeries(CandlestickSeries, {
@@ -142,14 +154,15 @@ export function CandlestickChart({ basePrice }: CandlestickChartProps) {
       resizeObserver.disconnect();
       chart.remove();
     };
-  }, [basePrice, selectedInterval, chartType]);
+  }, [basePrice, selectedInterval, chartType, klines]);
 
   useEffect(() => {
+    if (isLoading) return;
     const cleanup = initChart();
     return () => {
       cleanup?.then((fn) => fn?.());
     };
-  }, [initChart]);
+  }, [initChart, isLoading]);
 
   const toggleFullscreen = () => {
     if (!chartContainerRef.current?.parentElement) return;
@@ -167,7 +180,7 @@ export function CandlestickChart({ basePrice }: CandlestickChartProps) {
       {/* Toolbar */}
       <div className="flex items-center gap-1 px-2 py-1 border-b border-gray-700 bg-gray-900">
         <div className="flex gap-0.5">
-          {TIME_INTERVALS.map((interval) => (
+          {INTERVAL_OPTIONS.map((interval) => (
             <button
               key={interval.label}
               onClick={() => setSelectedInterval(interval)}
@@ -202,6 +215,10 @@ export function CandlestickChart({ basePrice }: CandlestickChartProps) {
 
         <div className="flex-1" />
 
+        {error && (
+          <span className="text-[10px] text-yellow-500 mr-2">Using mock data</span>
+        )}
+
         <button
           onClick={toggleFullscreen}
           className="p-1 text-gray-400 hover:text-white rounded hover:bg-gray-700"
@@ -221,6 +238,14 @@ export function CandlestickChart({ basePrice }: CandlestickChartProps) {
           </svg>
         </button>
       </div>
+
+      {/* Loading indicator */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-2 bg-gray-900/50">
+          <div className="h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <span className="ml-2 text-xs text-gray-400">Loading chart...</span>
+        </div>
+      )}
 
       {/* Chart */}
       <div ref={chartContainerRef} className="flex-1 min-h-0" />
