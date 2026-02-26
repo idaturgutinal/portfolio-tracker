@@ -226,6 +226,19 @@ export interface SymbolSearchResult {
   /** Maps to our AssetType enum values */
   suggestedType: string;
   exchange?: string;
+  currency?: string;
+}
+
+function guessCurrencyFromExchange(symbol: string, exchange?: string): string {
+  const ex = (exchange ?? "").toUpperCase();
+  const sym = symbol.toUpperCase();
+  if (ex === "IST" || sym.endsWith(".IS")) return "TRY";
+  if (ex === "LSE" || sym.endsWith(".L")) return "GBP";
+  if (ex === "PAR" || ex === "EPA" || sym.endsWith(".PA")) return "EUR";
+  if (ex === "FRA" || ex === "ETR" || sym.endsWith(".DE")) return "EUR";
+  if (ex === "TSE" || ex === "TYO" || sym.endsWith(".T")) return "JPY";
+  if (ex === "HKG" || sym.endsWith(".HK")) return "HKD";
+  return "USD";
 }
 
 export async function searchSymbols(query: string): Promise<SymbolSearchResult[]> {
@@ -240,6 +253,7 @@ export async function searchSymbols(query: string): Promise<SymbolSearchResult[]
       name: q.longname ?? q.shortname ?? q.symbol,
       suggestedType: YF_TYPE_MAP[q.typeDisp ?? ""] ?? "STOCK",
       exchange: q.exchange,
+      currency: guessCurrencyFromExchange(q.symbol, q.exchange),
     }));
   } catch {
     return [];

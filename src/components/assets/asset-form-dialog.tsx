@@ -105,6 +105,7 @@ export function AssetFormDialog(props: Props) {
       symbol: r.symbol,
       name: r.name || prev.name,
       assetType: r.suggestedType || prev.assetType,
+      currency: r.currency || prev.currency,
     }));
     setResults([]);
     setDropdownOpen(false);
@@ -319,8 +320,15 @@ export function AssetFormDialog(props: Props) {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="currency">Currency</Label>
-            <Input id="currency" value={form.currency} onChange={(e) => set("currency", e.target.value.toUpperCase())} maxLength={3} placeholder="USD" disabled={loading} />
+            <Label>Currency</Label>
+            <Select value={form.currency} onValueChange={(v) => set("currency", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {["USD", "EUR", "GBP", "TRY", "JPY", "CHF", "CAD", "AUD", "CNY", "HKD"].map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-1.5">
