@@ -9,15 +9,20 @@ datasource db {
 }
 
 model User {
-  id              String          @id @default(cuid())
-  name            String
-  email           String          @unique
-  password        String?
-  defaultCurrency String          @default("USD")
-  createdAt       DateTime        @default(now())
-  portfolios      Portfolio[]
-  alerts          PriceAlert[]
-  watchlistItems  WatchlistItem[]
+  id                 String              @id @default(cuid())
+  name               String
+  email              String              @unique
+  password           String?
+  defaultCurrency    String              @default("USD")
+  createdAt          DateTime            @default(now())
+  portfolios         Portfolio[]
+  alerts             PriceAlert[]
+  watchlistItems     WatchlistItem[]
+  binanceApiKeys     BinanceApiKey[]
+  tradeHistories     TradeHistory[]
+  favoritePairs      FavoritePair[]
+  binancePriceAlerts BinancePriceAlert[]
+  userSettings       UserSettings?
   @@map("users")
 }
 
@@ -106,4 +111,80 @@ model WatchlistItem {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([userId, symbol])
   @@map("watchlist_items")
+}
+
+// ─── Binance Trading Terminal Models ─────────────────────────────────────────
+
+model BinanceApiKey {
+  id              String    @id @default(cuid())
+  userId          String
+  label           String    @default("Default")
+  encryptedApiKey String
+  encryptedSecret String
+  permissions     String    @default("READ,TRADE")
+  isActive        Boolean   @default(true)
+  lastUsedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("binance_api_keys")
+}
+
+model TradeHistory {
+  id              String   @id @default(cuid())
+  userId          String
+  symbol          String
+  orderId         String
+  side            String
+  type            String
+  price           Float
+  quantity        Float
+  commission      Float
+  commissionAsset String
+  total           Float
+  executedAt      DateTime
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("trade_histories")
+}
+
+model FavoritePair {
+  id        String   @id @default(cuid())
+  userId    String
+  symbol    String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, symbol])
+  @@map("favorite_pairs")
+}
+
+model BinancePriceAlert {
+  id          String    @id @default(cuid())
+  userId      String
+  symbol      String
+  targetPrice Float
+  direction   String
+  isActive    Boolean   @default(true)
+  triggeredAt DateTime?
+  notifyEmail Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("binance_price_alerts")
+}
+
+model UserSettings {
+  id                   String  @id @default(cuid())
+  userId               String  @unique
+  defaultTimeframe     String  @default("1h")
+  defaultChartType     String  @default("candlestick")
+  showZeroBalances     Boolean @default(false)
+  orderConfirmation    Boolean @default(true)
+  soundNotifications   Boolean @default(true)
+  browserNotifications Boolean @default(false)
+  emailNotifications   Boolean @default(false)
+  theme                String  @default("dark")
+  user                 User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("user_settings")
 }
