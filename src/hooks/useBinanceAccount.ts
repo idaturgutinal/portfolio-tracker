@@ -13,13 +13,15 @@ export interface BalanceItem {
   usdtValue: number;
 }
 
-interface AccountApiResponse {
-  balances: { asset: string; free: string; locked: string }[];
-  error?: string;
+interface SignResponse {
+  apiKey: string;
+  signature: string;
+  timestamp: number;
+  queryString: string;
 }
 
-interface ErrorResponse {
-  error: string;
+interface BinanceAccountResponse {
+  balances: { asset: string; free: string; locked: string }[];
 }
 
 // Stablecoins pegged to ~1 USDT
@@ -61,17 +63,27 @@ export function useBinanceBalances(tickers: Map<string, TickerData>) {
 
   const fetchBalances = useCallback(async (signal: AbortSignal) => {
     try {
-      const res = await fetch("/api/binance/account", { signal });
+      // Step 1: Get signature from our server
+      const signRes = await fetch("/api/binance/sign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          method: "GET",
+          endpoint: "/api/v3/account",
+          params: {},
+        }),
+        signal,
+      });
 
-      if (res.status === 401) {
+      if (signRes.status === 401) {
         setHasApiKey(false);
         setRawBalances([]);
         setError(null);
         return;
       }
 
-      if (res.status === 400) {
-        const data: ErrorResponse = await res.json();
+      if (signRes.status === 400) {
+        const data = await signRes.json();
         if (data.error?.includes("No Binance API keys")) {
           setHasApiKey(false);
           setRawBalances([]);
@@ -81,13 +93,37 @@ export function useBinanceBalances(tickers: Map<string, TickerData>) {
         throw new Error(data.error);
       }
 
-      if (!res.ok) {
-        const data: ErrorResponse = await res.json();
-        throw new Error(data.error || `HTTP ${res.status}`);
+      if (!signRes.ok) {
+        const data = await signRes.json();
+        throw new Error(data.error || `Sign failed: HTTP ${signRes.status}`);
       }
 
-      const data: AccountApiResponse = await res.json();
-      setRawBalances(data.balances);
+      const { apiKey, signature, queryString }: SignResponse = await signRes.json();
+
+      // Step 2: Call Binance directly from client
+      const binanceRes = await fetch(
+        `https://api.binance.com/api/v3/account?${queryString}&signature=${signature}`,
+        {
+          headers: { "X-MBX-APIKEY": apiKey },
+          signal,
+        },
+      );
+
+      if (!binanceRes.ok) {
+        const errData = await binanceRes.json();
+        throw new Error(errData.msg || `Binance error: HTTP ${binanceRes.status}`);
+      }
+
+      const data: BinanceAccountResponse = await binanceRes.json();
+
+      // Filter out zero balances
+      const nonZeroBalances = data.balances.filter((b) => {
+        const free = parseFloat(b.free);
+        const locked = parseFloat(b.locked);
+        return free > 0 || locked > 0;
+      });
+
+      setRawBalances(nonZeroBalances);
       setHasApiKey(true);
       setError(null);
     } catch (err: unknown) {
