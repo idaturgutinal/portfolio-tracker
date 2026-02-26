@@ -12,6 +12,7 @@ import { OrderForm } from "@/components/terminal/OrderForm";
 import { BottomPanel } from "@/components/terminal/BottomPanel";
 import { KeyboardShortcuts } from "@/components/terminal/KeyboardShortcuts";
 import { useBinanceTickers } from "@/hooks/useBinanceMarket";
+import { useBinanceBalances } from "@/hooks/useBinanceAccount";
 
 export default function TerminalPage() {
   const [selectedPair, setSelectedPair] = useState<CoinPair>(COIN_PAIRS[0]);
@@ -21,6 +22,7 @@ export default function TerminalPage() {
   const coinListRef = useRef<CoinListHandle>(null);
 
   const { tickers, isLoading: tickersLoading, error: tickersError } = useBinanceTickers();
+  const { balances } = useBinanceBalances(tickers);
 
   // Get live ticker for the selected pair
   const liveTicker = useMemo(() => {
@@ -134,6 +136,7 @@ export default function TerminalPage() {
                     currentPrice={currentPrice}
                     side={orderSide}
                     onSideChange={setOrderSide}
+                    balances={balances}
                   />
                 </div>
               </div>

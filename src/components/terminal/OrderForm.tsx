@@ -13,9 +13,10 @@ interface OrderFormProps {
   currentPrice: number;
   side?: OrderSide;
   onSideChange?: (side: OrderSide) => void;
+  balances?: Array<{ asset: string; free: number }>;
 }
 
-export function OrderForm({ baseAsset, quoteAsset, currentPrice, side: controlledSide, onSideChange }: OrderFormProps) {
+export function OrderForm({ baseAsset, quoteAsset, currentPrice, side: controlledSide, onSideChange, balances }: OrderFormProps) {
   const [internalSide, setInternalSide] = useState<OrderSide>("Buy");
   const side = controlledSide ?? internalSide;
 
@@ -39,8 +40,8 @@ export function OrderForm({ baseAsset, quoteAsset, currentPrice, side: controlle
 
   const { isLoading: orderLoading, error: orderError, placeOrder } = usePlaceOrder();
 
-  const mockBalance = side === "Buy" ? 10000 : 0.5;
   const balanceAsset = side === "Buy" ? quoteAsset : baseAsset;
+  const availableBalance = balances?.find((b) => b.asset === balanceAsset)?.free ?? 0;
 
   const total = useMemo(() => {
     const p = orderType === "Market" ? currentPrice : parseFloat(price) || 0;
@@ -54,10 +55,10 @@ export function OrderForm({ baseAsset, quoteAsset, currentPrice, side: controlle
     if (side === "Buy") {
       const p = orderType === "Market" ? currentPrice : parseFloat(price) || currentPrice;
       if (p > 0) {
-        setAmount(((mockBalance * pct) / 100 / p).toFixed(6));
+        setAmount(((availableBalance * pct) / 100 / p).toFixed(6));
       }
     } else {
-      setAmount(((mockBalance * pct) / 100).toFixed(6));
+      setAmount(((availableBalance * pct) / 100).toFixed(6));
     }
   };
 
@@ -145,7 +146,7 @@ export function OrderForm({ baseAsset, quoteAsset, currentPrice, side: controlle
         {/* Balance */}
         <div className="flex justify-between text-xs">
           <span className="text-gray-400">Available</span>
-          <span className="font-mono">{mockBalance.toLocaleString()} {balanceAsset}</span>
+          <span className="font-mono">{balances === undefined ? "Loading..." : `${availableBalance.toLocaleString()} ${balanceAsset}`}</span>
         </div>
 
         {/* Stop Price (Stop-Limit only) */}
