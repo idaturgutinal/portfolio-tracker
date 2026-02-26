@@ -6,6 +6,8 @@ import { checkUserRateLimit, checkOrderRateLimit } from "@/lib/binance/rate-limi
 import { validateOrderParams, sanitizeInput } from "@/lib/binance/validators";
 import type { OrderSide, OrderType, TimeInForce } from "@/lib/binance/types";
 
+export const preferredRegion = ['fra1', 'lhr1', 'cdg1'];
+
 export async function POST(request: Request) {
   try {
     const userId = await getSessionUserId();

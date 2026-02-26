@@ -4,6 +4,8 @@ import { checkPublicRateLimit } from "@/lib/binance/rate-limiter";
 import { getClientIp } from "@/lib/rate-limit";
 import type { KlineInterval } from "@/lib/binance/types";
 
+export const preferredRegion = ['fra1', 'lhr1', 'cdg1'];
+
 const VALID_INTERVALS: KlineInterval[] = [
   "1m", "3m", "5m", "15m", "30m",
   "1h", "2h", "4h", "6h", "8h", "12h",

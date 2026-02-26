@@ -3,6 +3,8 @@ import { getSessionUserId, badRequest, unauthorizedResponse, serverError } from 
 import { createBinanceClient } from "@/lib/binance/order-client";
 import type { BinanceOpenOrder } from "@/lib/binance/order-client";
 
+export const preferredRegion = ['fra1', 'lhr1', 'cdg1'];
+
 function formatDate(timestamp: number): string {
   return new Date(timestamp).toISOString().replace("T", " ").slice(0, 19);
 }

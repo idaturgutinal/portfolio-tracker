@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUserId, badRequest, unauthorizedResponse, serverError } from "@/lib/api-utils";
 import { createBinanceClient } from "@/lib/binance/order-client";
 
+export const preferredRegion = ['fra1', 'lhr1', 'cdg1'];
+
 interface CancelAllBody {
   symbol: string;
 }

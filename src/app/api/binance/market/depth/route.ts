@@ -3,6 +3,8 @@ import { createPublicClient } from "@/lib/binance/client";
 import { checkPublicRateLimit } from "@/lib/binance/rate-limiter";
 import { getClientIp } from "@/lib/rate-limit";
 
+export const preferredRegion = ['fra1', 'lhr1', 'cdg1'];
+
 const VALID_LIMITS = [5, 10, 20, 50, 100, 500, 1000, 5000];
 
 export async function GET(request: Request) {

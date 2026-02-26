@@ -4,6 +4,8 @@ import { createBinanceClient } from "@/lib/binance/order-client";
 import type { OrderSide } from "@/lib/binance/order-client";
 import { validateOcoOrder } from "@/lib/binance/order-validators";
 
+export const preferredRegion = ['fra1', 'lhr1', 'cdg1'];
+
 interface OcoOrderBody {
   symbol: string;
   side: OrderSide;

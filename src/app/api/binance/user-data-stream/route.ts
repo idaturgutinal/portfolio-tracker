@@ -4,6 +4,8 @@ import { BinanceClient } from "@/lib/binance/client";
 import { getUserApiKeys } from "@/lib/binance/helpers";
 import { checkUserRateLimit } from "@/lib/binance/rate-limiter";
 
+export const preferredRegion = ['fra1', 'lhr1', 'cdg1'];
+
 export async function POST() {
   try {
     const userId = await getSessionUserId();

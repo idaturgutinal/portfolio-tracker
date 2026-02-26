@@ -9,6 +9,8 @@ import {
   validateOrderType,
 } from "@/lib/binance/order-validators";
 
+export const preferredRegion = ['fra1', 'lhr1', 'cdg1'];
+
 interface PlaceOrderBody {
   symbol: string;
   side: OrderSide;
