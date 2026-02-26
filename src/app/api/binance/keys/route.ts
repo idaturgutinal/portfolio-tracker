@@ -7,21 +7,9 @@ import {
   badRequest,
   serverError,
 } from "@/lib/api-utils";
-import crypto from "crypto";
-
 function maskKey(key: string): string {
   if (key.length <= 8) return "****";
   return key.slice(0, 4) + "****" + key.slice(-4);
-}
-
-function generateBinanceSignature(
-  queryString: string,
-  secret: string
-): string {
-  return crypto
-    .createHmac("sha256", secret)
-    .update(queryString)
-    .digest("hex");
 }
 
 export async function GET() {
@@ -84,28 +72,6 @@ export async function POST(req: NextRequest) {
       label && typeof label === "string" && label.trim().length > 0
         ? label.trim()
         : "Default";
-
-    // Test the API key by making a request to Binance
-    const timestamp = Date.now().toString();
-    const queryString = `timestamp=${timestamp}`;
-    const signature = generateBinanceSignature(queryString, secretKey.trim());
-
-    const testUrl = `https://api.binance.com/api/v3/account?${queryString}&signature=${signature}`;
-    const testResponse = await fetch(testUrl, {
-      method: "GET",
-      headers: {
-        "X-MBX-APIKEY": apiKey.trim(),
-      },
-    });
-
-    if (!testResponse.ok) {
-      const errorData = (await testResponse.json().catch(() => null)) as {
-        msg?: string;
-      } | null;
-      return badRequest(
-        `Binance API key validation failed: ${errorData?.msg ?? "Invalid API key or secret."}`
-      );
-    }
 
     // Encrypt and store
     const encryptedApiKey = encrypt(apiKey.trim());
