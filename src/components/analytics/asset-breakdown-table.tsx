@@ -16,17 +16,10 @@ import { formatCurrency, formatPercent } from "@/utils/format";
 import { EmptyState } from "@/components/empty-state";
 import { ArrowUpDown, ArrowUp, ArrowDown, BarChart2 } from "lucide-react";
 import type { AssetMetric } from "@/services/dashboard.service";
+import { ASSET_TYPE_LABELS } from "@/lib/constants";
 
 type SortKey = "symbol" | "value" | "gainLoss" | "gainLossPct";
 type SortDir = "asc" | "desc";
-
-const ASSET_TYPE_LABELS: Record<string, string> = {
-  STOCK: "Stock",
-  CRYPTO: "Crypto",
-  ETF: "ETF",
-  MUTUAL_FUND: "Fund",
-  BOND: "Bond",
-};
 
 interface Props {
   assets: AssetMetric[];

@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { badRequest, serverError } from "@/lib/api-utils";
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
     const { email } = body as { email?: unknown };
 
     if (typeof email !== "string" || !email.trim()) {
-      return NextResponse.json({ error: "Email is required." }, { status: 400 });
+      return badRequest("Email is required.");
     }
 
     const normalizedEmail = email.trim().toLowerCase();
@@ -55,9 +56,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(ok);
   } catch (err) {
     console.error("[forgot-password]", err);
-    return NextResponse.json(
-      { error: "An unexpected error occurred." },
-      { status: 500 }
-    );
+    return serverError();
   }
 }

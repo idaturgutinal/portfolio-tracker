@@ -19,14 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { SymbolSearchResult } from "@/services/marketData";
-
-const ASSET_TYPES = [
-  { value: "STOCK", label: "Stock" },
-  { value: "CRYPTO", label: "Crypto" },
-  { value: "ETF", label: "ETF" },
-  { value: "MUTUAL_FUND", label: "Mutual Fund" },
-  { value: "BOND", label: "Bond" },
-];
+import { ASSET_TYPES, ASSET_TYPE_LABELS } from "@/lib/constants";
 
 interface Props {
   open: boolean;
@@ -202,8 +195,8 @@ export function AddWatchlistDialog({ open, onOpenChange, onSuccess }: Props) {
               </SelectTrigger>
               <SelectContent>
                 {ASSET_TYPES.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>
-                    {t.label}
+                  <SelectItem key={t} value={t}>
+                    {ASSET_TYPE_LABELS[t]}
                   </SelectItem>
                 ))}
               </SelectContent>

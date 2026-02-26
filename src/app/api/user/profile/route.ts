@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getSessionUserId, unauthorizedResponse, badRequest, conflictResponse, serverError } from "@/lib/api-utils";
 import { prisma } from "@/lib/prisma";
 import { updateUserProfile } from "@/services/user.service";
 
@@ -10,10 +10,8 @@ const VALID_CURRENCIES = new Set([
 ]);
 
 export async function PATCH(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const userId = await getSessionUserId();
+  if (!userId) return unauthorizedResponse();
 
   try {
     const body = await req.json();
@@ -27,50 +25,47 @@ export async function PATCH(req: NextRequest) {
 
     if (name !== undefined) {
       if (typeof name !== "string" || name.trim().length === 0) {
-        return NextResponse.json({ error: "Name cannot be empty." }, { status: 400 });
+        return badRequest("Name cannot be empty.");
       }
       if (name.trim().length > 100) {
-        return NextResponse.json(
-          { error: "Name must be 100 characters or fewer." },
-          { status: 400 }
-        );
+        return badRequest("Name must be 100 characters or fewer.");
       }
       updates.name = name.trim();
     }
 
     if (email !== undefined) {
       if (typeof email !== "string") {
-        return NextResponse.json({ error: "Invalid email." }, { status: 400 });
+        return badRequest("Invalid email.");
       }
       const normalizedEmail = email.trim().toLowerCase();
       if (!EMAIL_RE.test(normalizedEmail)) {
-        return NextResponse.json({ error: "A valid email address is required." }, { status: 400 });
+        return badRequest("A valid email address is required.");
       }
       if (normalizedEmail.length > 254) {
-        return NextResponse.json({ error: "Email is too long." }, { status: 400 });
+        return badRequest("Email is too long.");
       }
 
       const conflict = await prisma.user.findFirst({
-        where: { email: normalizedEmail, NOT: { id: session.user.id } },
+        where: { email: normalizedEmail, NOT: { id: userId } },
       });
       if (conflict) {
-        return NextResponse.json({ error: "Email already in use." }, { status: 409 });
+        return conflictResponse("Email already in use.");
       }
       updates.email = normalizedEmail;
     }
 
     if (defaultCurrency !== undefined) {
       if (typeof defaultCurrency !== "string" || !VALID_CURRENCIES.has(defaultCurrency.toUpperCase())) {
-        return NextResponse.json({ error: "Unsupported currency." }, { status: 400 });
+        return badRequest("Unsupported currency.");
       }
       updates.defaultCurrency = defaultCurrency.toUpperCase();
     }
 
     if (Object.keys(updates).length === 0) {
-      return NextResponse.json({ error: "No fields to update." }, { status: 400 });
+      return badRequest("No fields to update.");
     }
 
-    const updated = await updateUserProfile(session.user.id, updates);
+    const updated = await updateUserProfile(userId, updates);
 
     return NextResponse.json({
       id: updated.id,
@@ -79,6 +74,6 @@ export async function PATCH(req: NextRequest) {
       defaultCurrency: updated.defaultCurrency,
     });
   } catch {
-    return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
+    return serverError();
   }
 }

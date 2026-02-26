@@ -19,23 +19,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { AssetFormDialog } from "./asset-form-dialog";
+import { ManagePortfoliosDialog } from "./manage-portfolios-dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { formatCurrency, formatPercent } from "@/utils/format";
 import type { EnrichedAsset, PortfolioOption } from "@/types";
 import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
-  ChevronLeft,
-  ChevronRight,
   FolderOpen,
   Pencil,
   Plus,
@@ -45,28 +37,13 @@ import {
   Wallet,
 } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
-
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const PAGE_SIZE = 25;
-
-const ASSET_TYPES = ["STOCK", "CRYPTO", "ETF", "MUTUAL_FUND", "BOND"] as const;
-
-const TYPE_LABELS: Record<string, string> = {
-  STOCK: "Stock",
-  CRYPTO: "Crypto",
-  ETF: "ETF",
-  MUTUAL_FUND: "Mutual Fund",
-  BOND: "Bond",
-};
-
-const TYPE_BADGE: Record<string, string> = {
-  STOCK: "bg-blue-100 text-blue-700",
-  CRYPTO: "bg-orange-100 text-orange-700",
-  ETF: "bg-green-100 text-green-700",
-  MUTUAL_FUND: "bg-purple-100 text-purple-700",
-  BOND: "bg-gray-100 text-gray-600",
-};
+import { PaginationControls } from "@/components/ui/pagination";
+import {
+  PAGE_SIZE,
+  ASSET_TYPES,
+  ASSET_TYPE_LABELS,
+  ASSET_TYPE_BADGE,
+} from "@/lib/constants";
 
 type SortField = keyof Pick<
   EnrichedAsset,
@@ -142,12 +119,7 @@ export function AssetsTable({ initialAssets, portfolios: initialPortfolios, curr
   const [editingAsset, setEditingAsset] = useState<EnrichedAsset | null>(null);
   const [pendingDelete, setPendingDelete] = useState<EnrichedAsset | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-
-  // Portfolio management
   const [manageOpen, setManageOpen] = useState(false);
-  const [pendingDeletePortfolio, setPendingDeletePortfolio] = useState<PortfolioOption | null>(null);
-  const [portfolioDeleteLoading, setPortfolioDeleteLoading] = useState(false);
-  const [portfolioError, setPortfolioError] = useState<string | null>(null);
 
   // ── Filtering + sorting ──────────────────────────────────────────────────
   const filtered = useMemo(() => {
@@ -185,7 +157,6 @@ export function AssetsTable({ initialAssets, portfolios: initialPortfolios, curr
     [sorted, page]
   );
 
-  // Reset to page 1 when filters/search change
   useEffect(() => {
     setPage(1);
   }, [typeFilter, search]);
@@ -207,7 +178,6 @@ export function AssetsTable({ initialAssets, portfolios: initialPortfolios, curr
   async function handleDelete() {
     if (!pendingDelete) return;
     setDeleteLoading(true);
-    // Delete all underlying records for this (possibly consolidated) row
     await Promise.all(
       pendingDelete.ids.map((id) => fetch(`/api/assets/${id}`, { method: "DELETE" }))
     );
@@ -217,29 +187,6 @@ export function AssetsTable({ initialAssets, portfolios: initialPortfolios, curr
     refresh();
   }
 
-  async function handleDeletePortfolio() {
-    if (!pendingDeletePortfolio) return;
-    setPortfolioDeleteLoading(true);
-    setPortfolioError(null);
-    try {
-      const res = await fetch(`/api/portfolios/${pendingDeletePortfolio.id}`, { method: "DELETE" });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        setPortfolioError((body as { error?: string }).error ?? "Failed to delete portfolio.");
-        setPortfolioDeleteLoading(false);
-        return;
-      }
-      setPortfolioList((prev) => prev.filter((p) => p.id !== pendingDeletePortfolio.id));
-      setPendingDeletePortfolio(null);
-      refresh();
-    } catch {
-      setPortfolioError("Failed to delete portfolio.");
-    }
-    setPortfolioDeleteLoading(false);
-  }
-
-  // After editing a consolidated row, delete the extra underlying records
-  // so they collapse into the one record that was just PATCHed.
   function makeEditSuccessHandler(asset: EnrichedAsset) {
     if (asset.ids.length <= 1) return refresh;
     return async () => {
@@ -272,7 +219,7 @@ export function AssetsTable({ initialAssets, portfolios: initialPortfolios, curr
               <SelectItem value="all">All types</SelectItem>
               {ASSET_TYPES.map((t) => (
                 <SelectItem key={t} value={t}>
-                  {TYPE_LABELS[t]}
+                  {ASSET_TYPE_LABELS[t]}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -289,7 +236,7 @@ export function AssetsTable({ initialAssets, portfolios: initialPortfolios, curr
           >
             <RefreshCw className={`h-4 w-4 ${isPending ? "animate-spin" : ""}`} />
           </Button>
-          <Button variant="outline" onClick={() => { setManageOpen(true); setPortfolioError(null); }}>
+          <Button variant="outline" onClick={() => setManageOpen(true)}>
             <FolderOpen className="h-4 w-4 mr-1" />
             Portfolios
           </Button>
@@ -300,7 +247,7 @@ export function AssetsTable({ initialAssets, portfolios: initialPortfolios, curr
         </div>
       </div>
 
-      {/* Empty state rendered above the table */}
+      {/* Empty state */}
       {sorted.length === 0 && assets.length === 0 ? (
         <EmptyState
           icon={Wallet}
@@ -320,7 +267,6 @@ export function AssetsTable({ initialAssets, portfolios: initialPortfolios, curr
           description="Try adjusting your search or filter criteria."
         />
       ) : (
-        /* Table */
         <div className="rounded-md border overflow-x-auto">
           <Table>
             <TableHeader>
@@ -384,9 +330,9 @@ export function AssetsTable({ initialAssets, portfolios: initialPortfolios, curr
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
                       <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${TYPE_BADGE[asset.assetType] ?? "bg-muted text-muted-foreground"}`}
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${ASSET_TYPE_BADGE[asset.assetType] ?? "bg-muted text-muted-foreground"}`}
                       >
-                        {TYPE_LABELS[asset.assetType] ?? asset.assetType}
+                        {ASSET_TYPE_LABELS[asset.assetType] ?? asset.assetType}
                       </span>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell text-muted-foreground text-sm whitespace-nowrap">
@@ -443,36 +389,12 @@ export function AssetsTable({ initialAssets, portfolios: initialPortfolios, curr
         </div>
       )}
 
-      {/* Pagination controls */}
-      {sorted.length > 0 && totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Page {page} of {totalPages}
-          </p>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-            >
-              Next
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
-          </div>
-        </div>
+      {/* Pagination */}
+      {sorted.length > 0 && (
+        <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
       )}
 
-      {/* Summary row */}
+      {/* Summary */}
       {sorted.length > 0 && assets.length > 0 && (
         <p className="text-sm text-muted-foreground text-right">
           {sorted.length} asset{sorted.length !== 1 ? "s" : ""} ·{" "}
@@ -508,128 +430,35 @@ export function AssetsTable({ initialAssets, portfolios: initialPortfolios, curr
       )}
 
       {/* Delete asset confirmation */}
-      <Dialog
+      <ConfirmDialog
         open={!!pendingDelete}
-        onOpenChange={(open) => {
-          if (!open) setPendingDelete(null);
-        }}
-      >
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Delete {pendingDelete?.symbol}?</DialogTitle>
-            <DialogDescription>
-              This will permanently delete{" "}
-              <strong>{pendingDelete?.name}</strong>
-              {pendingDelete && pendingDelete.ids.length > 1
-                ? ` (${pendingDelete.ids.length} entries)`
-                : ""}{" "}
-              and all its transaction history. This cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setPendingDelete(null)}
-              disabled={deleteLoading}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={deleteLoading}
-            >
-              {deleteLoading ? "Deleting…" : "Delete"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        onOpenChange={(open) => { if (!open) setPendingDelete(null); }}
+        title={`Delete ${pendingDelete?.symbol}?`}
+        description={
+          <>
+            This will permanently delete{" "}
+            <strong>{pendingDelete?.name}</strong>
+            {pendingDelete && pendingDelete.ids.length > 1
+              ? ` (${pendingDelete.ids.length} entries)`
+              : ""}{" "}
+            and all its transaction history. This cannot be undone.
+          </>
+        }
+        confirmLabel="Delete"
+        loadingLabel="Deleting…"
+        loading={deleteLoading}
+        onConfirm={handleDelete}
+      />
 
       {/* Manage Portfolios dialog */}
-      <Dialog open={manageOpen} onOpenChange={setManageOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Manage Portfolios</DialogTitle>
-            <DialogDescription>
-              Delete empty portfolios you no longer need.
-            </DialogDescription>
-          </DialogHeader>
-          {portfolioError && (
-            <p className="text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2">
-              {portfolioError}
-            </p>
-          )}
-          {portfolioList.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">No portfolios yet.</p>
-          ) : (
-            <ul className="space-y-2">
-              {portfolioList.map((p) => {
-                const assetCount = assets.filter((a) => a.portfolioId === p.id).length;
-                return (
-                  <li
-                    key={p.id}
-                    className="flex items-center justify-between rounded-md border px-3 py-2"
-                  >
-                    <div className="min-w-0">
-                      <p className="font-medium text-sm truncate">{p.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {assetCount} asset{assetCount !== 1 ? "s" : ""}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0 text-destructive hover:text-destructive"
-                      onClick={() => { setPendingDeletePortfolio(p); setPortfolioError(null); }}
-                      title="Delete portfolio"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete portfolio confirmation */}
-      <Dialog
-        open={!!pendingDeletePortfolio}
-        onOpenChange={(open) => {
-          if (!open) { setPendingDeletePortfolio(null); setPortfolioError(null); }
-        }}
-      >
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Delete &ldquo;{pendingDeletePortfolio?.name}&rdquo;?</DialogTitle>
-            <DialogDescription>
-              This will permanently delete the portfolio. Portfolios with assets cannot be deleted — remove the assets first.
-            </DialogDescription>
-          </DialogHeader>
-          {portfolioError && (
-            <p className="text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2">
-              {portfolioError}
-            </p>
-          )}
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setPendingDeletePortfolio(null)}
-              disabled={portfolioDeleteLoading}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeletePortfolio}
-              disabled={portfolioDeleteLoading}
-            >
-              {portfolioDeleteLoading ? "Deleting…" : "Delete"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ManagePortfoliosDialog
+        open={manageOpen}
+        onOpenChange={setManageOpen}
+        portfolios={portfolioList}
+        assets={assets}
+        onDeleted={(id) => setPortfolioList((prev) => prev.filter((p) => p.id !== id))}
+        onRefresh={refresh}
+      />
     </div>
   );
 }

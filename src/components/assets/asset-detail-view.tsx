@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { HoldingsSummaryCard } from "./holdings-summary-card";
 import { AssetAlertPanel } from "./asset-alert-panel";
 import type { PriceAlertRow } from "@/types";
+import { ASSET_TYPE_LABELS, ASSET_TYPE_BADGE } from "@/lib/constants";
 
 const TradingViewChart = dynamic(
   () =>
@@ -15,22 +16,6 @@ const TradingViewChart = dynamic(
     })),
   { ssr: false }
 );
-
-const TYPE_LABELS: Record<string, string> = {
-  STOCK: "Stock",
-  CRYPTO: "Crypto",
-  ETF: "ETF",
-  MUTUAL_FUND: "Mutual Fund",
-  BOND: "Bond",
-};
-
-const TYPE_BADGE: Record<string, string> = {
-  STOCK: "bg-blue-100 text-blue-700",
-  CRYPTO: "bg-orange-100 text-orange-700",
-  ETF: "bg-green-100 text-green-700",
-  MUTUAL_FUND: "bg-purple-100 text-purple-700",
-  BOND: "bg-gray-100 text-gray-600",
-};
 
 interface AssetDetail {
   id: string;
@@ -71,9 +56,9 @@ export function AssetDetailView({ asset, tvSymbol, alerts }: Props) {
           <span className="text-muted-foreground text-lg">&mdash;</span>
           <span className="text-lg text-muted-foreground">{asset.name}</span>
           <span
-            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${TYPE_BADGE[asset.assetType] ?? "bg-muted text-muted-foreground"}`}
+            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${ASSET_TYPE_BADGE[asset.assetType] ?? "bg-muted text-muted-foreground"}`}
           >
-            {TYPE_LABELS[asset.assetType] ?? asset.assetType}
+            {ASSET_TYPE_LABELS[asset.assetType] ?? asset.assetType}
           </span>
         </div>
       </div>
