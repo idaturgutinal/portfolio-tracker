@@ -12,6 +12,7 @@ import {
   ArrowLeftRight,
   Eye,
   BarChart2,
+  BarChart3,
   Bell,
   DollarSign,
   Settings,
@@ -31,6 +32,7 @@ const MAIN_NAV = [
   { href: "/dashboard/dividends", label: "Dividends", icon: DollarSign },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart2 },
   { href: "/dashboard/alerts", label: "Alerts", icon: Bell },
+  { href: "/dashboard/terminal", label: "Terminal", icon: BarChart3 },
 ];
 
 const BOTTOM_NAV = [
