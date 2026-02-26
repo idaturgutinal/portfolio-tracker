@@ -12,18 +12,18 @@ export async function GET(req: NextRequest) {
     const limit = searchParams.get("limit");
 
     if (!symbol) {
-      return badRequest("Symbol is required for order history");
+      return badRequest("Symbol is required for trade history");
     }
 
     const client = createBinanceClient();
-    const orders = await client.getAllOrders(
+    const trades = await client.getMyTrades(
       symbol,
       limit ? parseInt(limit, 10) : undefined
     );
 
-    return NextResponse.json(orders);
+    return NextResponse.json(trades);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to get order history";
+    const message = error instanceof Error ? error.message : "Failed to get trade history";
     return serverError(message);
   }
 }

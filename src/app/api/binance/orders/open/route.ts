@@ -1,42 +1,21 @@
-import { NextResponse } from "next/server";
-import { getSessionUserId } from "@/lib/api-utils";
-import { BinanceClient } from "@/lib/binance/client";
-import { getUserApiKeys } from "@/lib/binance/helpers";
-import { checkUserRateLimit } from "@/lib/binance/rate-limiter";
+import { NextRequest, NextResponse } from "next/server";
+import { getSessionUserId, unauthorizedResponse, serverError } from "@/lib/api-utils";
+import { createBinanceClient } from "@/lib/binance/order-client";
 
-export async function GET(request: Request) {
+export async function GET(req: NextRequest) {
   try {
     const userId = await getSessionUserId();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    if (!userId) return unauthorizedResponse();
 
-    const limit = checkUserRateLimit(userId);
-    if (!limit.allowed) {
-      return NextResponse.json(
-        { error: "Rate limit exceeded. Please try again later." },
-        { status: 429, headers: { "Retry-After": String(Math.ceil(limit.retryAfterMs / 1000)) } },
-      );
-    }
-
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(req.url);
     const symbol = searchParams.get("symbol") ?? undefined;
 
-    const keys = await getUserApiKeys(userId);
-    if (!keys) {
-      return NextResponse.json(
-        { error: "No Binance API keys configured. Please add your API keys in settings." },
-        { status: 400 },
-      );
-    }
+    const client = createBinanceClient();
+    const orders = await client.getOpenOrders(symbol);
 
-    const client = new BinanceClient({ apiKey: keys.apiKey, secretKey: keys.secretKey });
-    const data = await client.getOpenOrders(symbol?.toUpperCase());
-
-    return NextResponse.json(data);
+    return NextResponse.json(orders);
   } catch (error) {
-    console.error("[API] binance/orders/open error:", error);
-    const message = error instanceof Error ? error.message : "Internal server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Failed to get open orders";
+    return serverError(message);
   }
 }
