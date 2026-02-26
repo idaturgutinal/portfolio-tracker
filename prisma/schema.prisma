@@ -23,6 +23,8 @@ model User {
   favoritePairs      FavoritePair[]
   binancePriceAlerts BinancePriceAlert[]
   userSettings       UserSettings?
+  legalConsentVersion String?
+  legalConsentAt      DateTime?
   @@map("users")
 }
 

@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { badRequest, conflictResponse, serverError } from "@/lib/api-utils";
+import { CURRENT_LEGAL_VERSION } from "@/lib/legal-version";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -74,7 +75,13 @@ export async function POST(req: NextRequest) {
 
     const hashed = await bcrypt.hash(password, 12);
     const user = await prisma.user.create({
-      data: { name: trimmedName, email: normalizedEmail, password: hashed },
+      data: {
+        name: trimmedName,
+        email: normalizedEmail,
+        password: hashed,
+        legalConsentVersion: CURRENT_LEGAL_VERSION,
+        legalConsentAt: new Date(),
+      },
     });
 
     return NextResponse.json({ id: user.id }, { status: 201 });
