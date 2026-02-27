@@ -345,6 +345,21 @@ export class BinanceOrderClient {
     }
   }
 
+  async getAccountInfo(): Promise<{
+    balances: Array<{ asset: string; free: string; locked: string }>;
+    canTrade: boolean;
+    canWithdraw: boolean;
+    canDeposit: boolean;
+  }> {
+    try {
+      return await this.signedRequest("GET", "/api/v3/account");
+    } catch (error) {
+      throw new Error(
+        `Failed to get account info: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  }
+
   async getExchangeInfo(): Promise<ExchangeInfoResponse> {
     try {
       const response = await fetch(`${BINANCE_BASE_URL}/api/v3/exchangeInfo`);
